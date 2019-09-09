@@ -1,3 +1,6 @@
 /.vscode
 .DS_Store
-/data
+/data/train_sort.csv
+/data/test_stort.csv
+/data/raw/
+/data/submit/
