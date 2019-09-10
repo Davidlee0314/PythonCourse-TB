@@ -1,6 +1,6 @@
 /.vscode
 .DS_Store
-/data/train_sort.csv
-/data/test_sort.csv
+/data/sort
 /data/raw/
 /data/submit/
+*.pkl
