@@ -4,3 +4,5 @@
 /data/raw/
 /data/submit/
 *.pkl
+/.ipynb*
+__pycache__/

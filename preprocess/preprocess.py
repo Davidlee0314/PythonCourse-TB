@@ -23,12 +23,12 @@ from sklearn import preprocessing, metrics, model_selection
 import lightgbm as lgb 
 
 #%%
-train = pd.read_csv('/Users/davidlee/python/TBrain/data/train_sort.csv')
-test = pd.read_csv('/Users/davidlee/python/TBrain/data/test_sort.csv')
+train = pd.read_csv('/Users/davidlee/python/TBrain/data/sort/train_sort.csv')
+test = pd.read_csv('/Users/davidlee/python/TBrain/data/sort/test_sort.csv')
 
 #%%
-print('train shape: ', train.shape)
-print('test shape: ', test.shape)
+cv_test= pd.read_csv('/Users/davidlee/python/TBrain/data/cv_test.csv')
+cv_test
 
 #%%
 combine = pd.concat([train, test], ignore_index=True)
@@ -73,7 +73,7 @@ def covariate_shift(combine, feature):
     print(feature, 'roc_auc score equals', roc_auc)
 
 def plot_categorical(combine, feature):
-    fig, axes = plt.subplots(2, 2, figsize=(10, 10))
+    (fig, axes)= plt.subplots(2, 2, figsize=(10, 10))
     axes = axes.ravel()
 
     sns.barplot(combine[feature], combine['fraud_ind'], ax=axes[0])
@@ -93,7 +93,7 @@ def reduce_memory(df):
         print("******************************")
         print("Column: ", col)
         print("dtype before: ", df[col].dtype)
-        if(df[col].dtype == object):
+        if(df[col].dtype == object and col != 'absolute_time'):
             df[col] = df[col].map({'N': 0, 'Y': 1})
             if(df[col].isnull().sum() == 0):
                 df[col] = df[col].astype(np.uint8)
@@ -162,7 +162,11 @@ for c in [x for x in combine.columns if x != 'txkey' and x != 'locdt' and x != '
 reduce_memory(test)
 
 #%%
-# combine.to_csv('data/sort/combine_sort.csv', index=False)
-combine.to_csv('data/combine.gz', compression='gzip', index=False)
+import pickle as pkl 
+import pandas as pd 
+combine=pd.read_csv('data/combine.gz', compression='gzip')
+
+#%%
+
 
 #%%
