@@ -4,5 +4,5 @@
 /data/raw/
 /data/submit/
 *.pkl
-/.ipynb*
+.ipynb_checkpoints
 __pycache__/
