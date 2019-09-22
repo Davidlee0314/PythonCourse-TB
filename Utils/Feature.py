@@ -86,7 +86,7 @@ class FeatureEngineer():
         return None
 
     def diff_money(self, df):
-        df['diff_money'] = (df.groupby('card'))['money'].diff() 
+        df['diff_money'] = abs((df.groupby('card'))['money'].diff())
 
     # def coin_bank_dominance(self, df):
     #     '''
