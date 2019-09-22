@@ -81,6 +81,13 @@ class FeatureEngineer():
         df[b + '_trade_ratio/' + a] = df.set_index([a, b]).index.map(dct.get)
         return None
 
+    def sum_money(self, df):
+        df['sum_money'] = (df.groupby('card'))['money'].cumsum()
+        return None
+
+    def diff_money(self, df):
+        df['diff_money'] = (df.groupby('card'))['money'].diff() 
+
     # def coin_bank_dominance(self, df):
     #     '''
     #     dominant coin type 貨幣在那個歸戶交易過幾次
@@ -131,9 +138,11 @@ class FeatureEngineer():
     def engineer_all(self, df):
         agg = ['acquirer', 'bank', 'card', 'coin', 'mcc', 'shop', 'city', 'nation', 'status', 'trade_cat', 'pay_type', 'trade_type']
         need_encode = ['acquirer', 'bank', 'card', 'coin', 'mcc', 'shop', 'city', 'nation']
-        
+        num = 6
+
         # number aggregation
-        print('*' * 10, 'num agg...')
+        print('\nStart Feature Engineer Pre-processing ... ')
+        print('=' * 40, '\n[1/{}] num agg ...\n'.format(num)+'=' * 40)
         for col in need_encode:
             li_temp = [x for x in agg if x != col]
             for b in li_temp:
@@ -144,7 +153,7 @@ class FeatureEngineer():
                     self.num_agg(df, col, b)
 
         # ratio aggregation
-        print('*' * 10, 'trade ratio...')
+        print('\n' + '=' * 40, '\n[2/{}] trade ratio ...\n'.format(num) +'=' * 40)
         for col in need_encode:
             print(col, end=',')
             li_temp = [x for x in agg if x != col]
@@ -152,7 +161,7 @@ class FeatureEngineer():
                 self.trade_ratio(df, col, b)
 
         # count by day
-        print('*' * 10, 'count by day...')
+        print('\n\n' + '=' * 40, '\n[3/{}] count by day ...\n'.format(num) +'=' * 40)
         for i in np.linspace(0, 119, 120):
             print(i, end=',')
             for col in need_encode:
@@ -161,6 +170,16 @@ class FeatureEngineer():
                         df.loc[(df['date'] == i + 1), col].value_counts())
 
         # money stat feature
-        print('*' * 10, 'money stat..')
+        print('\n\n' + '=' * 40, '\n[4/{}] money stat ...\n'.format(num) +'=' * 40)
         self.numerical_stat(df, 'money', need_encode, var=False, mean=False, min_val=False)
+
+        # sum money
+        print('\n\n' + '=' * 40, '\n[5/{}] sum money ...\n'.format(num) +'=' * 40)
+        self.sum_money(df)
+
+        # diff money
+        print('\n\n' + '=' * 40, '\n[6/{}] sum money ...\n'.format(num) +'=' * 40)
+        self.diff_money(df)
+        
+        print('\nDONE')
         return None

@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pandas as pd
 import gc
@@ -99,7 +100,9 @@ def train_submit(combine, cat, not_train, file_name, boost_round=1000):
         'txkey': combine.loc[TRAIN_SHAPE:, 'txkey'],
         'fraud_ind': np.where(pred >= 0.191, 1, 0)
     })
-    submit.to_csv(ROUTE + f'submit/{ file_name }.csv', index=False)
+    os.makedirs('./submit', exist_ok=True)
+    submit.to_csv(f'./submit/{file_name}.csv', index=False)
+    # submit.to_csv(ROUTE + f'submit/{ file_name }.csv', index=False)
     del X, y, train_data, test, submit
     gc.collect()
     return clf.feature_importance(importance_type='split'), clf.feature_importance(importance_type='gain')
