@@ -4,7 +4,10 @@ import gc
 
 # model
 from sklearn import preprocessing, model_selection, metrics
+from Utils.CrossValidate import CrossValidate, lgb_f1_score
 import lightgbm as lgb
+TRAIN_SHAPE = 1521787
+ROUTE = '/Users/davidlee/python/TBrain/data/'
 
 # covariate shift
 def covariate_shift(combine, feature, train_shape):
@@ -35,3 +38,70 @@ def covariate_shift(combine, feature, train_shape):
     del df, X_train, y_train, X_test, y_test
     gc.collect()
     print(feature, 'roc_auc score equals', roc_auc)
+    return None
+
+def get_unsample_data(df, n):
+    '''
+    df: training dataframe
+    n: the ratio of the normal and anamoly
+    '''
+    number_records_fraud = len(df[df['fraud_ind'] == 1])
+    fraud_indices = np.array(df[df['fraud_ind'] == 1].index)
+    normal_indices = df[df['fraud_ind'] == 0].index
+
+    random_normal_indices = np.random.choice(normal_indices, number_records_fraud * n, replace=False)
+    random_normal_indices = np.array(random_normal_indices)
+
+    under_sample_indices = np.concatenate([fraud_indices, random_normal_indices])
+    under_sample_data = df.iloc[under_sample_indices, :].copy().sample(frac=1).reset_index(drop=True)
+    return under_sample_data
+
+def fast_validate(combine, cat, not_train):
+    cv = CrossValidate()
+    res_list = []
+    for i in [2, 3, 4]:
+        print('*' * 10, i, 'splits', '*' * 10)
+        temp = combine.loc[(combine['date'] > 0) & (combine['date'] <= 10), :].copy()
+        X = temp.loc[:, [x for x in temp.columns if x not in not_train]]
+        y = temp.loc[:, 'fraud_ind']
+        print(X.shape)
+        res = cv.expanding_window(X, y, cat, boost_round=1000, n_fold=i, verbose=500)
+        res_list.append(sum(res) / len(res))
+        del temp, X, y, res
+        gc.collect()
+    return sum(res_list) / len(res_list)
+
+def train_submit(combine, cat, not_train, file_name, boost_round=1000):
+    X = combine.loc[:TRAIN_SHAPE - 1, [x for x in combine.columns if x not in not_train]]
+    y = combine.loc[:TRAIN_SHAPE - 1, 'fraud_ind']  
+    params = {
+        'objective': 'binary',
+        # 'early_stopping_rounds': 100,
+        'learning_rate': 0.01,
+        'reg_alpha': 0.5,
+        'reg_lambda': 0.5,
+        'max_depth': -1,
+        'num_leaves': 100,
+        'metric': 'None',
+        'seed': 6
+    }
+    print(X.shape)
+    train_data = lgb.Dataset(data=X, label=y, categorical_feature=cat)
+    clf = lgb.train(params, 
+        train_data,
+        valid_sets=[train_data],
+        num_boost_round=boost_round,
+        verbose_eval=50,
+        feval=lgb_f1_score)
+    test = combine.loc[TRAIN_SHAPE:, [x for x in combine.columns if x not in not_train]]
+    pred = clf.predict(test)
+    submit = pd.DataFrame({
+        'txkey': combine.loc[TRAIN_SHAPE:, 'txkey'],
+        'fraud_ind': np.where(pred >= 0.191, 1, 0)
+    })
+    submit.to_csv(ROUTE + f'submit/{ file_name }.csv', index=False)
+    del X, y, train_data, test, submit
+    gc.collect()
+    return clf.feature_importance(importance_type='split'), clf.feature_importance(importance_type='gain')
+
+
