@@ -141,7 +141,6 @@ class FeatureEngineer():
         num = 6
 
         # number aggregation
-        print('\nStart Feature Engineer Pre-processing ... ')
         print('=' * 40, '\n[1/{}] num agg ...\n'.format(num)+'=' * 40)
         for col in need_encode:
             li_temp = [x for x in agg if x != col]

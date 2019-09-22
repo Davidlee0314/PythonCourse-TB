@@ -89,12 +89,15 @@ class CrossValidate():
             'seed': random_seed
         }
         
+        count = 1
         i = 0
         for train_index, val_index in tscv.split(X):
             if(i < n_fold - last_fold):
                 i += 1
                 continue
+            print('\n' + '='*40 + '\n' + '[ CV Round {} ]'.format(count))
             i += 1
+            count += 1
             X_tr, X_val = X.iloc[train_index, :], X.iloc[val_index, :]
             y_tr, y_val = y[train_index], y[val_index]
             train_data = lgb.Dataset(data=X_tr, label=y_tr, categorical_feature=cat)
@@ -110,6 +113,7 @@ class CrossValidate():
             res.append(max(eval_dict['valid_0']['f1']))
             del eval_dict, train_data, val_data
             gc.collect()
+            print('\n' + '='*40 + '\n')
         return res
 
     def ratio_window(self, X, y, cat, boost_round=500, random_seed=6, last_fold=3):
