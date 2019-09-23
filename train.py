@@ -83,10 +83,10 @@ def train(action='cv', file_name='submit001', feature='new', feature_fname='feat
 
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument("action", choices=['cv', 'submit'], default='cv', type=str)
-    parser.add_argument("--file_name", default='submit001', type=str)
-    parser.add_argument("--feature", choices=['new', 'load'], default='new', type=str)
-    parser.add_argument("--feature_fname", default='feature_ver1', type=str)
+    parser.add_argument("--action", "-a", choices=['cv', 'submit'], default='cv', type=str)
+    parser.add_argument("--feature", "-f", choices=['new', 'load'], default='new', type=str)
+    parser.add_argument("--feature_fname", "-fn", default='feature_ver1', type=str)
+    parser.add_argument("--output_fname", "-on", default='submit001', type=str)
     args = parser.parse_args()
     return args
 
@@ -96,7 +96,7 @@ if __name__ == '__main__':
 
     train(
         action=args.action,
-        file_name=args.file_name,
+        file_name=args.output_fname,
         feature=args.feature,
         feature_fname=args.feature_fname
     )
