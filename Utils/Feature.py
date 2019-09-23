@@ -33,7 +33,11 @@ def map_stat_feature(X, b, c, mean=True, max_val=True, \
 #     return None
 
 class FeatureEngineer():
-    def __init__(self, ):
+    def __init__(self):
+        '''
+        fe_dict: dict of arrays, record groups of engineering feature for drop columns use.
+        '''
+        self.fe_dict = {}
         return None
     
     # def get_hour(self, df):
@@ -142,6 +146,7 @@ class FeatureEngineer():
 
         # number aggregation
         print('=' * 40, '\n[1/{}] num agg ...\n'.format(num)+'=' * 40)
+        before_fe = df.columns.shape[0]
         for col in need_encode:
             li_temp = [x for x in agg if x != col]
             for b in li_temp:
@@ -150,13 +155,14 @@ class FeatureEngineer():
                 else:
                     print(f'one {col} has how many {b}')
                     self.num_agg(df, col, b)
+        self.fe_dict['num_agg'] = list(df.columns[before_fe:])
 
         # ratio aggregation
         ratio = ['acquirer', 'bank', 'card', 'coin', 'mcc', 'shop', 'city', 'nation', \
             'status', 'trade_cat', 'pay_type', 'trade_type', 'fallback', '3ds', 'online', 'install', 'excess']
         print('\n' + '=' * 40, '\n[2/{}] trade ratio ...\n'.format(num) +'=' * 40)
+        before_fe = df.columns.shape[0]
         for col in need_encode:
-            # print(col, end=',')
             li_temp = [x for x in ratio if x != col]
             for b in li_temp:
                 if(((col == 'city') and (b == 'nation')) or ((col == 'card') and (b == 'bank'))):
@@ -164,19 +170,21 @@ class FeatureEngineer():
                 else:
                     print(f'{b} trade ratio for one {col}')
                     self.trade_ratio(df, col, b)
+        self.fe_dict['trade_ratio'] = list(df.columns[before_fe:])
 
         # count by day
         print('\n\n' + '=' * 40, '\n[3/{}] count by day ...\n'.format(num) +'=' * 40)
-        for i in np.linspace(0, 119, 120):
-            print(i, end=',')
-            for col in need_encode:
-                df.loc[(df['date'] == i + 1), col + '_count_1'] = \
-                    df[col].map(\
-                        df.loc[(df['date'] == i + 1), col].value_counts())
+        before_fe = df.columns.shape[0]
+        for col in need_encode:
+            print(col, end=',')
+            df[col + '_count_1'] = df.set_index(['date', col]).index.map(df.groupby(['date', col]).size().to_dict())
+        self.fe_dict['count_one_day'] = list(df.columns[before_fe:])
 
         # money stat feature
         print('\n\n' + '=' * 40, '\n[4/{}] money stat ...\n'.format(num) +'=' * 40)
+        before_fe = df.columns.shape[0]
         self.numerical_stat(df, 'money', need_encode, var=False, mean=False, min_val=False)
+        self.fe_dict['money_stat'] = list(df.columns[before_fe:])
 
         # sum money
         print('\n\n' + '=' * 40, '\n[5/{}] sum money ...\n'.format(num) +'=' * 40)
