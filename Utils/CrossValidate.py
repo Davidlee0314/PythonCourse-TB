@@ -9,7 +9,7 @@ ROUTE = '/Users/davidlee/python/TBrain/data/'
 
 def lgb_f1_score(y_hat, data):
     y_true = data.get_label()
-    y_hat = np.round(y_hat) # scikits f1 doesn't like probabilities
+    y_hat = np.where(y_hat >= 0.21, 1, 0)
     return 'f1', f1_score(y_true, y_hat), True
 
 class CrossValidate():
