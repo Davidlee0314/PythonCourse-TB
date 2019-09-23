@@ -26,11 +26,11 @@ def map_stat_feature(X, b, c, mean=True, max_val=True, \
             X[b] - X[b + '_' + c + '_median']
     return None
 
-def trade_ratio(X, b, c):
-    # b grouped by c
-    dct = (X.groupby([c, b]).size() / X.groupby(c).size()).to_dict()
-    X[b + '_' + c + '_traderatio']  = X.set_index([c, b]).index.map(dct.get)
-    return None
+# def trade_ratio(X, b, c):
+#     # b grouped by c
+#     dct = (X.groupby([c, b]).size() / X.groupby(c).size()).to_dict()
+#     X[b + '_' + c + '_traderatio']  = X.set_index([c, b]).index.map(dct.get)
+#     return None
 
 class FeatureEngineer():
     def __init__(self, ):
@@ -152,12 +152,18 @@ class FeatureEngineer():
                     self.num_agg(df, col, b)
 
         # ratio aggregation
+        ratio = ['acquirer', 'bank', 'card', 'coin', 'mcc', 'shop', 'city', 'nation', \
+            'status', 'trade_cat', 'pay_type', 'trade_type', 'fallback', '3ds', 'online', 'install', 'excess']
         print('\n' + '=' * 40, '\n[2/{}] trade ratio ...\n'.format(num) +'=' * 40)
         for col in need_encode:
-            print(col, end=',')
-            li_temp = [x for x in agg if x != col]
+            # print(col, end=',')
+            li_temp = [x for x in ratio if x != col]
             for b in li_temp:
-                self.trade_ratio(df, col, b)
+                if(((col == 'city') and (b == 'nation')) or ((col == 'card') and (b == 'bank'))):
+                    pass
+                else:
+                    print(f'{b} trade ratio for one {col}')
+                    self.trade_ratio(df, col, b)
 
         # count by day
         print('\n\n' + '=' * 40, '\n[3/{}] count by day ...\n'.format(num) +'=' * 40)
