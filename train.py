@@ -1,4 +1,4 @@
-
+import os
 import sys
 import warnings
 import gc
@@ -42,14 +42,17 @@ def get_dataset():
     return combine
 
 
-def train(action='cv', file_name='submit001', feature='new', feature_path='./data/feature_ver1.pkl'):
+def train(action='cv', file_name='submit001', feature='new', feature_fname='feature_ver1l'):
     TRAIN_SHAPE = 1521787
     not_train = ['txkey', 'date', 'time', 'fraud_ind']
     need_encode = ['acquirer', 'bank', 'card', 'coin', 'mcc', 'shop', 'city', 'nation']
     cat = ['status', 'trade_cat', 'pay_type', 'trade_type']
+    feature_root = os.path.join('.', 'data', 'feature')
+    os.makedirs(feature_root, exist_ok=True)
 
     # pre process
     print('\nStart Feature Engineer Pre-processing ... \n')
+    feature_path = os.path.join(feature_root, feature_fname+'.pkl')
     if feature == 'new':
         # get dataset
         dataset = get_dataset()
@@ -69,7 +72,7 @@ def train(action='cv', file_name='submit001', feature='new', feature_path='./dat
         print('Train dataset shape :', X.shape)
         print('Train label shape :', y.shape)
 
-        # by 0.191 threshold
+        # by 0.21 threshold
         cv = CrossValidate()
         res = cv.expanding_window(X, y, cat, boost_round=1000)
         print('>> Avg Cross Validation : {}'.format(sum(res) / len(res)))
@@ -83,7 +86,7 @@ def parse_args():
     parser.add_argument("action", choices=['cv', 'submit'], default='cv', type=str)
     parser.add_argument("--file_name", default='submit001', type=str)
     parser.add_argument("--feature", choices=['new', 'load'], default='new', type=str)
-    parser.add_argument("--feature_path", default='./data/feature_ver1.pkl', type=str)
+    parser.add_argument("--feature_fname", default='feature_ver1', type=str)
     args = parser.parse_args()
     return args
 
@@ -95,5 +98,5 @@ if __name__ == '__main__':
         action=args.action,
         file_name=args.file_name,
         feature=args.feature,
-        feature_path=args.feature_path
+        feature_fname=args.feature_fname
     )
