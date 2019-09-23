@@ -12,6 +12,28 @@ def lgb_f1_score(y_hat, data):
     y_hat = np.where(y_hat >= 0.21, 1, 0)
     return 'f1', f1_score(y_true, y_hat), True
 
+def lgb_train(train_data, val_data, boost_round, random_seed):
+    params = {
+        'objective': 'binary',
+        'early_stopping_rounds': 100,
+        'learning_rate': 0.01,
+        'reg_alpha': 0.5,
+        'reg_lambda': 0.5,
+        'max_depth': -1,
+        'num_leaves': 100,
+        'seed': random_seed,
+        'metrics': 'None'
+    }
+    eval_dict = {}
+    lgb.train(params, 
+        train_data,
+        valid_sets=[val_data], 
+        evals_result=eval_dict,
+        num_boost_round=boost_round,
+        verbose_eval=100, 
+        feval=lgb_f1_score)
+    return max(eval_dict['valid_0']['f1'])
+
 class CrossValidate():
     def __init__(self):
         return None
@@ -34,30 +56,13 @@ class CrossValidate():
             shape_list.append(shape_fold * (i + 1))
         Xs = np.split(X, shape_list)
         ys = np.split(y, shape_list)
-        params = {
-            'objective': 'binary',
-            'early_stopping_rounds': 100,
-            'learning_rate': 0.01,
-            'reg_alpha': 0.5,
-            'reg_lambda': 0.5,
-            'max_depth': -1,
-            'num_leaves': 100,
-            'seed': random_seed
-        }
+        
         res = []
         for i in range(n_fold):
-            eval_dict = {}
             train_data = lgb.Dataset(data=Xs[i], label=ys[i], categorical_feature=cat)
             val_data = lgb.Dataset(data=Xs[i], label=ys[i], reference=train_data, categorical_feature=cat)
-            lgb.train(params, 
-                train_data,
-                valid_sets=[val_data], 
-                evals_result=eval_dict,
-                num_boost_round=boost_round,
-                verbose_eval=50, 
-                feval=lgb_f1_score)
-            res.append(max(eval_dict['valid_0']['f1']))
-            del eval_dict, train_data, val_data
+            res.append(lgb_train(train_data, val_data, boost_round, random_seed))
+            del train_data, val_data
             gc.collect()
         del Xs, ys
         gc.collect()
@@ -78,17 +83,6 @@ class CrossValidate():
         '''
         tscv = TimeSeriesSplit(n_fold)
         res = []
-        params = {
-            'objective': 'binary',
-            'early_stopping_rounds': 100,
-            'learning_rate': 0.01,
-            'reg_alpha': 0.5,
-            'reg_lambda': 0.5,
-            'max_depth': -1,
-            'num_leaves': 100,
-            'seed': random_seed
-        }
-        
         count = 1
         for train_index, val_index in tscv.split(X):
             print('\n' + '='*40 + '\n' + '[ CV Round {} ]'.format(count))
@@ -97,16 +91,8 @@ class CrossValidate():
             y_tr, y_val = y[train_index], y[val_index]
             train_data = lgb.Dataset(data=X_tr, label=y_tr, categorical_feature=cat)
             val_data = lgb.Dataset(data=X_val, label=y_val, reference=train_data, categorical_feature=cat)
-            eval_dict = {}
-            lgb.train(params, 
-                train_data,
-                valid_sets=[val_data], 
-                evals_result=eval_dict,
-                num_boost_round=boost_round,
-                verbose_eval=50, 
-                feval=lgb_f1_score)
-            res.append(max(eval_dict['valid_0']['f1']))
-            del eval_dict, train_data, val_data
+            res.append(lgb_train(train_data, val_data, boost_round, random_seed))
+            del train_data, val_data
             gc.collect()
             print('\n' + '='*40 + '\n')
         return res
