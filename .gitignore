@@ -1,8 +1,8 @@
 /.vscode
 .DS_Store
-/data/sort
-/data/raw/
 /data/submit/
-*.pkl
 .ipynb_checkpoints
 __pycache__/
+
+/data/mine/
+/Notebook/mine/
