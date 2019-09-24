@@ -40,11 +40,11 @@ class FeatureEngineer():
         self.fe_dict = {}
         return None
     
-    # def get_hour(self, df):
-    #     df['time'] = df['time'].astype(int).astype(str).str.zfill(6)
-    #     df['hour'] = df['time'].str.slice(0, 2).astype(int)
-    #     df['time'] = df['time'].astype('int64')
-    #     return None
+    def get_hour(self, df):
+        df['time'] = df['time'].astype(int).astype(str).str.zfill(6)
+        df['hour'] = df['time'].str.slice(0, 2).astype(int)
+        df['time'] = df['time'].astype('int64')
+        return None
 
     def numerical_stat(self, df, num_col, columns, \
         mean=True, max_val=True, min_val=True, std=True, var=True, median=True, median_diff=True):
@@ -191,7 +191,7 @@ class FeatureEngineer():
         self.sum_money(df)
 
         # diff money
-        print('\n\n' + '=' * 40, '\n[6/{}] sum money ...\n'.format(num) +'=' * 40)
+        print('\n\n' + '=' * 40, '\n[6/{}] diff money ...\n'.format(num) +'=' * 40)
         self.diff_money(df)
         
         print('\nDONE')

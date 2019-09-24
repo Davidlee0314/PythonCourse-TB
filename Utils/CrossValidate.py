@@ -1,6 +1,7 @@
 import numpy as np
-import pandas as pd 
+import pandas as pd
 import lightgbm as lgb
+import matplotlib.pyplot as plt 
 import gc
 from sklearn.metrics import f1_score
 from sklearn.model_selection import TimeSeriesSplit
@@ -27,12 +28,16 @@ def lgb_train(train_data, val_data, boost_round, random_seed):
     eval_dict = {}
     lgb.train(params, 
         train_data,
-        valid_sets=[val_data], 
+        valid_sets=[train_data, val_data], 
         evals_result=eval_dict,
         num_boost_round=boost_round,
         verbose_eval=100, 
         feval=lgb_f1_score)
-    return max(eval_dict['valid_0']['f1'])
+    lgb.plot_metric(eval_dict, metric='f1')
+    res = max(eval_dict['valid_1']['f1'])
+    del eval_dict
+    gc.collect()
+    return res
 
 class CrossValidate():
     def __init__(self):
