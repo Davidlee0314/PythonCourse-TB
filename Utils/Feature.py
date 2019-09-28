@@ -92,6 +92,13 @@ class FeatureEngineer():
     def diff_money(self, df):
         df['diff_money'] = abs((df.groupby('card'))['money'].diff())
 
+    def card_first_trade_sum(self, df):
+        df['card_first_trad'] = 0
+        a = df.reset_index().groupby(['card']).first()['index']
+        df.loc[a, 'card_first_trad'] = 1
+        df['sum_unicard'] = (df.groupby('bank'))['card_first_trad'].cumsum()
+
+
     # def coin_bank_dominance(self, df):
     #     '''
     #     dominant coin type 貨幣在那個歸戶交易過幾次
@@ -142,7 +149,7 @@ class FeatureEngineer():
     def engineer_all(self, df):
         agg = ['acquirer', 'bank', 'card', 'coin', 'mcc', 'shop', 'city', 'nation', 'status', 'trade_cat', 'pay_type', 'trade_type']
         need_encode = ['acquirer', 'bank', 'card', 'coin', 'mcc', 'shop', 'city', 'nation']
-        num = 6
+        num = 7
 
         # number aggregation
         print('=' * 40, '\n[1/{}] num agg ...\n'.format(num)+'=' * 40)
@@ -193,6 +200,10 @@ class FeatureEngineer():
         # diff money
         print('\n\n' + '=' * 40, '\n[6/{}] diff money ...\n'.format(num) +'=' * 40)
         self.diff_money(df)
-        
+
+        # card first trade sum
+        print('\n\n' + '=' * 40, '\n[7/{}] card first trade sum ...\n'.format(num) +'=' * 40)
+        self.card_first_trade_sum(df)
+
         print('\nDONE')
         return None
