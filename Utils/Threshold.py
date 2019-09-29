@@ -86,7 +86,7 @@ class Thresehold():
 
     def get_best_threshold(self, df):
         '''
-        Within the range 0.05 from the min f1 socre threshold, find the best threshold with the min std value
+        Within the range 0.05 from the min f1 score threshold, find the best threshold with the min std value
         
         Parameters:
         df: the DataFrame from calc_threshold_diff method
