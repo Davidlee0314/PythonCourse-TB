@@ -12,7 +12,7 @@ def map_stat_feature(X, b, c, mean=True, max_val=True, \
             X[c].map(X.loc[:, [b, c]].groupby(c).max().loc[:, b].to_dict())
     if(min_val):
         X[b + '_' + c + '_min'] = \
-            X[c].map(X.loc[:, [b, c]].groupby(c).mean().loc[:, b].to_dict())
+            X[c].map(X.loc[:, [b, c]].groupby(c).min().loc[:, b].to_dict())
     if(std):
         X[b + '_' + c + '_std'] = \
             X[c].map(X.loc[:, [b, c]].groupby(c).std().loc[:, b].to_dict())

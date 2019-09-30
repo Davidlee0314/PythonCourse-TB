@@ -4,13 +4,18 @@ from sklearn.metrics import precision_recall_curve, f1_score
 from sklearn.model_selection import TimeSeriesSplit
 import lightgbm as lgb
 
-from Utils.CrossValidate import lgb_f1_score
+# from Utils.CrossValidate import lgb_f1_score
 
 def get_f1_score(threshold, y_true, y_proba):
     y_pred = np.where(y_proba >= threshold, 1, 0)
     return f1_score(y_true, y_pred)
 
-class Thresehold():
+def lgb_f1_score_fixed(y_hat, data):
+    y_true = data.get_label()
+    y_hat = np.where(y_hat >= 0.5, 1, 0)
+    return 'f1', f1_score(y_true, y_hat), True
+
+class Threshold():
     def __init__(self):
         return None
 
@@ -72,7 +77,7 @@ class Thresehold():
                 valid_sets=[val_data],
                 num_boost_round=boost_round,
                 verbose_eval=0, 
-                feval=lgb_f1_score)
+                feval=lgb_f1_score_fixed)
             # get best result f1 for val set
             prob = clf.predict(X.loc[val_index, :])
             search_result = self.threshold_search(y[val_index], prob)

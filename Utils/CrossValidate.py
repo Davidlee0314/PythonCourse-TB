@@ -7,10 +7,11 @@ from sklearn.metrics import f1_score
 from sklearn.model_selection import TimeSeriesSplit
 
 ROUTE = '/Users/davidlee/python/TBrain/data/'
+THRESHOLD = 0.103
 
 def lgb_f1_score(y_hat, data):
     y_true = data.get_label()
-    y_hat = np.where(y_hat >= 0.21, 1, 0)
+    y_hat = np.where(y_hat >= THRESHOLD, 1, 0)
     return 'f1', f1_score(y_true, y_hat), True
 
 def lgb_train(train_data, val_data, boost_round, random_seed):
@@ -86,6 +87,7 @@ class CrossValidate():
         cat: categorical list
         last_fold: the last folds want to run (> 0)
         '''
+        print(f'threshold: {THRESHOLD}')
         tscv = TimeSeriesSplit(n_fold)
         res = []
         count = 1
