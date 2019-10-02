@@ -7,7 +7,7 @@ from sklearn.metrics import f1_score
 from sklearn.model_selection import TimeSeriesSplit
 
 ROUTE = '/Users/davidlee/python/TBrain/data/'
-THRESHOLD = 0.103
+THRESHOLD = 0.248
 
 def lgb_f1_score(y_hat, data):
     y_true = data.get_label()

@@ -72,7 +72,7 @@ def fast_validate(combine, cat, not_train):
         gc.collect()
     return sum(res_list) / len(res_list)
 
-def train_submit(combine, cat, not_train, file_name, boost_round=1000):
+def train_submit(combine, cat, not_train, threshold, file_name, boost_round=1000):
     X = combine.loc[:TRAIN_SHAPE - 1, [x for x in combine.columns if x not in not_train]]
     y = combine.loc[:TRAIN_SHAPE - 1, 'fraud_ind']  
     params = {
@@ -98,7 +98,7 @@ def train_submit(combine, cat, not_train, file_name, boost_round=1000):
     pred = clf.predict(test)
     submit = pd.DataFrame({
         'txkey': combine.loc[TRAIN_SHAPE:, 'txkey'],
-        'fraud_ind': np.where(pred >= 0.21, 1, 0)
+        'fraud_ind': np.where(pred >= threshold, 1, 0)
     })
     os.makedirs('./submit', exist_ok=True)
     submit.to_csv(f'./submit/{file_name}.csv', index=False)

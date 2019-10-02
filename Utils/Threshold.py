@@ -1,3 +1,5 @@
+import gc
+
 import numpy as np
 import pandas as pd
 from sklearn.metrics import precision_recall_curve, f1_score
@@ -56,7 +58,7 @@ class Threshold():
         tscv = TimeSeriesSplit(n_fold)
         params = {
             'objective': 'binary',
-            'early_stopping_rounds': 100,
+            # 'early_stopping_rounds': 100,
             'learning_rate': 0.01,
             'reg_alpha': 0.5,
             'reg_lambda': 0.5,
@@ -76,7 +78,7 @@ class Threshold():
                 train_data,
                 valid_sets=[val_data],
                 num_boost_round=boost_round,
-                verbose_eval=0, 
+                verbose_eval=100,
                 feval=lgb_f1_score_fixed)
             # get best result f1 for val set
             prob = clf.predict(X.loc[val_index, :])
@@ -87,6 +89,11 @@ class Threshold():
             df['fold_' + str(i)] = df['threshold'].apply(lambda x: get_f1_score(x, y[val_index], prob))
             df['fold_' + str(i)] = df['fold_' + str(i)] - search_result['f1']
             print(f'{i} fold run: search threshold {search_result}')
+            
+            # record max f1 score
+            df.loc[999, 'fold_' + str(i)] = search_result['f1']
+            del train_data, val_data, search_result
+            gc.collect()
         return df
 
     def get_best_threshold(self, df):
@@ -99,6 +106,10 @@ class Threshold():
         Return:
         best_threshold: the best threshold value
         '''
-        min_val = df.set_index('threshold').mean(axis=1).argmax()
-        best_threshold = df[(df['threshold'] >= min_val - 0.05)&(df['threshold'] <= min_val + 0.05)].set_index('threshold').std(axis=1).argmin()
+        min_val = df.iloc[:999, :].set_index('threshold').mean(axis=1).argmax()
+        best_threshold = df[(df['threshold'] >= min_val - 0.05) & (df['threshold'] <= min_val + 0.05)].set_index('threshold').std(axis=1).argmin()
         return best_threshold
+
+    def get_cv_score(self, df, threshold):
+        index = 1000 * (threshold - 0.001)
+        return df.loc[[999, index], [x for x in df.columns if x != 'threshold']].sum().mean()
