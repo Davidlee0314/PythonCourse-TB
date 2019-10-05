@@ -64,6 +64,7 @@ def train(action='cv', file_name='submit001', feature='new', feature_fname='feat
     elif feature == 'load':
         with open(feature_path, 'rb') as file:
             dataset = pickle.load(file)
+        print('Features loaded (from {})'.format(feature_path))
 
     # 2. calculate threshold
     print('\n[Step 2/3] Calculate best threshold ... \n')
@@ -76,8 +77,10 @@ def train(action='cv', file_name='submit001', feature='new', feature_fname='feat
 
     # 2-2. get threhold
     th = Threshold()
-    df = th.calc_threshold_diff(X, y, cat, n_fold=n_fold)
+    df, result_list = th.calc_threshold_diff(X, y, cat, n_fold=n_fold)
     best_threshold = th.get_best_threshold(df)
+    for i, result in enumerate(result_list):
+        print(f'\t {i} fold run: search threshold {result}')
     print('\nBest Threshold = ', best_threshold)
 
     # 3. Training

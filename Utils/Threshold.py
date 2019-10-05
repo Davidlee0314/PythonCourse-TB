@@ -52,6 +52,7 @@ class Threshold():
 
         Return:
         df: DataFrame with each threshold difference value from the fold's best f1 score.
+        result_list: list of threshold on differrent fold
         '''
         tscv = TimeSeriesSplit(n_fold)
         params = {
@@ -67,6 +68,7 @@ class Threshold():
         }
         try_threshold = np.linspace(0.001, 0.999, 999)
         df = pd.DataFrame({'threshold': try_threshold})
+        result_list = []
         i = 0
         for train_index, val_index in tscv.split(X):
             train_data = lgb.Dataset(data=X.loc[train_index, :], label=y[train_index], categorical_feature=cat)
@@ -86,13 +88,14 @@ class Threshold():
             i += 1
             df['fold_' + str(i)] = df['threshold'].apply(lambda x: self.get_f1_score(x, y[val_index], prob))
             df['fold_' + str(i)] = df['fold_' + str(i)] - search_result['f1']
-            print(f'{i} fold run: search threshold {search_result}')
+            result_list.append(search_result)
+            print(f'{i} fold run: search threshold {search_result}\n')
             
             # record max f1 score
             df.loc[999, 'fold_' + str(i)] = search_result['f1']
             del train_data, val_data, search_result
             gc.collect()
-        return df
+        return df, result_list
 
     def get_best_threshold(self, df):
         '''
