@@ -5,7 +5,7 @@ import gc
 
 # model
 from sklearn import preprocessing, model_selection, metrics
-from Utils.CrossValidate import CrossValidate, lgb_f1_score
+from Utils.CrossValidate import CrossValidate, lgb_train
 import lightgbm as lgb
 TRAIN_SHAPE = 1521787
 ROUTE = '/Users/davidlee/python/TBrain/data/'
@@ -74,26 +74,15 @@ def fast_validate(combine, cat, not_train):
 
 def train_submit(combine, cat, not_train, threshold, file_name, boost_round=1000):
     X = combine.loc[:TRAIN_SHAPE - 1, [x for x in combine.columns if x not in not_train]]
-    y = combine.loc[:TRAIN_SHAPE - 1, 'fraud_ind']  
-    params = {
-        'objective': 'binary',
-        # 'early_stopping_rounds': 100,
-        'learning_rate': 0.01,
-        'reg_alpha': 0.5,
-        'reg_lambda': 0.5,
-        'max_depth': -1,
-        'num_leaves': 100,
-        'metric': 'None',
-        'seed': 6
-    }
-    print(X.shape)
-    train_data = lgb.Dataset(data=X, label=y, categorical_feature=cat)
-    clf = lgb.train(params, 
-        train_data,
-        valid_sets=[train_data],
-        num_boost_round=boost_round,
-        verbose_eval=50,
-        feval=lgb_f1_score)
+    y = combine.loc[:TRAIN_SHAPE - 1, 'fraud_ind']
+    print('X.shape :',X.shape)
+    train_data = lgb.Dataset(data=X, label=y, categorical_feature=cat) 
+    val_data = None
+
+    # model training
+    clf = lgb_train(train_data, val_data, threshold, for_submit=True)
+
+    # predicting
     test = combine.loc[TRAIN_SHAPE:, [x for x in combine.columns if x not in not_train]]
     pred = clf.predict(test)
     submit = pd.DataFrame({

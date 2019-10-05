@@ -20,9 +20,10 @@ from catboost import CatBoostClassifier, Pool
 # import category_encoders as ce
 
 from Utils.Feature import FeatureEngineer
-from Utils.CrossValidate import CrossValidate, lgb_f1_score
+from Utils.CrossValidate import CrossValidate
 from Utils.read_data import read
 from Utils.func import train_submit
+from Utils.Threshold import Threshold
 # from Utils.plot import plot_dist_diff, plot_high_fraud, plot_high_countfraud
 
 
@@ -42,7 +43,7 @@ def get_dataset():
     return combine
 
 
-def train(action='cv', file_name='submit001', feature='new', feature_fname='feature_ver1l'):
+def train(action='cv', file_name='submit001', feature='new', feature_fname='feature_ver1l', n_fold=5):
     TRAIN_SHAPE = 1521787
     not_train = ['txkey', 'date', 'time', 'fraud_ind']
     need_encode = ['acquirer', 'bank', 'card', 'coin', 'mcc', 'shop', 'city', 'nation']
@@ -50,8 +51,8 @@ def train(action='cv', file_name='submit001', feature='new', feature_fname='feat
     feature_root = os.path.join('.', 'data', 'feature')
     os.makedirs(feature_root, exist_ok=True)
 
-    # pre process
-    print('\nStart Feature Engineer Pre-processing ... \n')
+    # 1. pre process
+    print('\n[Step 1/3] Start Feature Engineer Pre-processing ... \n')
     feature_path = os.path.join(feature_root, feature_fname+'.pkl')
     if feature == 'new':
         # get dataset
@@ -64,16 +65,25 @@ def train(action='cv', file_name='submit001', feature='new', feature_fname='feat
         with open(feature_path, 'rb') as file:
             dataset = pickle.load(file)
 
-    print('\nStart Training ... \n')
-    if action == 'cv':
-        # split train / test
-        X = dataset.loc[:TRAIN_SHAPE - 1, [x for x in dataset.columns if x not in not_train and x not in need_encode]]
-        y = dataset.loc[:TRAIN_SHAPE - 1, 'fraud_ind']
-        print('Train dataset shape :', X.shape)
-        print('Train label shape :', y.shape)
+    # 2. calculate threshold
+    print('\n[Step 2/3] Calculate best threshold ... \n')
+    
+    # 2-1. split train / test
+    X = dataset.loc[:TRAIN_SHAPE - 1, [x for x in dataset.columns if x not in not_train and x not in need_encode]]
+    y = dataset.loc[:TRAIN_SHAPE - 1, 'fraud_ind']
+    print('\tTrain dataset shape :', X.shape)
+    print('\tTrain label shape :', y.shape, '\n')
 
-        # by 0.21 threshold
-        cv = CrossValidate()
+    # 2-2. get threhold
+    th = Threshold()
+    df = th.calc_threshold_diff(X, y, cat, n_fold=n_fold)
+    best_threshold = th.get_best_threshold(df)
+    print('\nBest Threshold = ', best_threshold)
+
+    # 3. Training
+    print('\n[Step 3/3] Start Training ... \n')
+    if action == 'cv':
+        cv = CrossValidate(threshold=best_threshold)
         res = cv.expanding_window(X, y, cat, boost_round=1000)
         print('>> Avg Cross Validation : {}'.format(sum(res) / len(res)))
         print('>> base line : 0.6034704709308101')
@@ -87,6 +97,7 @@ def parse_args():
     parser.add_argument("--feature", "-f", choices=['new', 'load'], default='new', type=str)
     parser.add_argument("--feature_fname", "-fn", default='feature_ver1', type=str)
     parser.add_argument("--output_fname", "-on", default='submit001', type=str)
+    parser.add_argument("--n_fold", "-n", default=5, type=int)
     args = parser.parse_args()
     return args
 
@@ -98,5 +109,6 @@ if __name__ == '__main__':
         action=args.action,
         file_name=args.output_fname,
         feature=args.feature,
-        feature_fname=args.feature_fname
+        feature_fname=args.feature_fname,
+        n_fold=args.n_fold
     )
