@@ -16,7 +16,7 @@ class Threshold():
 
     def lgb_f1_score_fixed(self, y_hat, data):
         y_true = data.get_label()
-        y_hat = np.where(y_hat >= 0.5, 1, 0)
+        y_hat = np.where(y_hat >= 0.25, 1, 0)
         return 'f1', f1_score(y_true, y_hat), True
 
     def threshold_search(self, y_true, y_proba):
@@ -39,7 +39,7 @@ class Threshold():
         search_result = {'threshold': best_th , 'f1': best_score}
         return search_result 
 
-    def calc_threshold_diff(self, X, y, cat, n_fold, boost_round=100):
+    def calc_threshold_diff(self, X, y, cat, n_fold, boost_round=1000):
         '''
         Use expanding window method to record each threshold difference from the fold's best f1 score.
 
