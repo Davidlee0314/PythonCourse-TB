@@ -80,7 +80,7 @@ def train_submit(combine, cat, not_train, threshold, file_name, boost_round=1000
     val_data = None
 
     # model training
-    clf = lgb_train(train_data, val_data, threshold, for_submit=True)
+    clf = lgb_train(train_data, val_data, threshold, boost_round=boost_round, for_submit=True)
 
     # predicting
     test = combine.loc[TRAIN_SHAPE:, [x for x in combine.columns if x not in not_train]]
