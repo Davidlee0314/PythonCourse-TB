@@ -16,7 +16,7 @@ class Threshold():
 
     def lgb_f1_score_fixed(self, y_hat, data):
         y_true = data.get_label()
-        y_hat = np.where(y_hat >= 0.25, 1, 0)
+        y_hat = np.where(y_hat >= 0.5, 1, 0)
         return 'f1', f1_score(y_true, y_hat), True
 
     def threshold_search(self, y_true, y_proba):
