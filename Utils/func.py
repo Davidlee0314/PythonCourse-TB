@@ -72,7 +72,7 @@ def fast_validate(combine, cat, not_train):
         gc.collect()
     return sum(res_list) / len(res_list)
 
-def train_submit(combine, cat, not_train, threshold, file_name, boost_round=1000):
+def train_submit(combine, cat, not_train, threshold, file_name, init_model=None, boost_round=1000):
     X = combine.loc[:TRAIN_SHAPE - 1, [x for x in combine.columns if x not in not_train]]
     y = combine.loc[:TRAIN_SHAPE - 1, 'fraud_ind']
     print('X.shape :',X.shape)
@@ -80,7 +80,7 @@ def train_submit(combine, cat, not_train, threshold, file_name, boost_round=1000
     val_data = None
 
     # model training
-    clf = lgb_train(train_data, val_data, threshold, boost_round=boost_round, for_submit=True)
+    clf = lgb_train(train_data, val_data, threshold, init_model=init_model, boost_round=boost_round, for_submit=True)
 
     # predicting
     test = combine.loc[TRAIN_SHAPE:, [x for x in combine.columns if x not in not_train]]
@@ -94,6 +94,6 @@ def train_submit(combine, cat, not_train, threshold, file_name, boost_round=1000
     # submit.to_csv(ROUTE + f'submit/{ file_name }.csv', index=False)
     del X, y, train_data, test, submit
     gc.collect()
-    return clf.feature_importance(importance_type='split'), clf.feature_importance(importance_type='gain')
+    return clf
 
 

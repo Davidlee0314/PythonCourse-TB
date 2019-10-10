@@ -14,8 +14,8 @@ def lgb_f1_score(y_hat, data, THRESHOLD=0.248):
     y_hat = np.where(y_hat >= THRESHOLD, 1, 0)
     return 'f1', f1_score(y_true, y_hat), True
 
-def lgb_train(train_data, val_data, threshold, boost_round=1000, random_seed=6, for_submit=False):
-
+def lgb_train(train_data, val_data, threshold, init_model, boost_round=1000, random_seed=6, for_submit=False):
+    print('boost round: ', boost_round)
     def lgb_f1_score(y_hat, data, THRESHOLD=threshold):
         y_true = data.get_label()
         y_hat = np.where(y_hat >= THRESHOLD, 1, 0)
@@ -40,7 +40,8 @@ def lgb_train(train_data, val_data, threshold, boost_round=1000, random_seed=6, 
         valid_sets=valid_sets,
         evals_result=eval_dict,
         num_boost_round=boost_round,
-        verbose_eval=100, 
+        verbose_eval=100,
+        init_model=init_model,
         feval=lgb_f1_score)
 
     if for_submit:
