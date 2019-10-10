@@ -43,7 +43,7 @@ def get_dataset():
     return combine
 
 
-def train(action='cv', file_name='submit001', feature='new', feature_fname='feature_ver1l', n_fold=5):
+def train(action='cv', file_name='submit001', feature='new', feature_fname='feature_ver1l', n_fold=5, threshold=None):
     TRAIN_SHAPE = 1521787
     not_train = ['txkey', 'date', 'time', 'fraud_ind']
     need_encode = ['acquirer', 'bank', 'card', 'coin', 'mcc', 'shop', 'city', 'nation']
@@ -76,12 +76,15 @@ def train(action='cv', file_name='submit001', feature='new', feature_fname='feat
     print('\tTrain label shape :', y.shape, '\n')
 
     # 2-2. get threhold
-    th = Threshold()
-    df, result_list = th.calc_threshold_diff(X, y, cat, n_fold=n_fold)
-    best_threshold = th.get_best_threshold(df)
-    for i, result in enumerate(result_list):
-        print(f'\t {i} fold run: search threshold {result}')
-    print('\nBest Threshold = ', best_threshold)
+    if threshold is None:
+        th = Threshold()
+        df, result_list = th.calc_threshold_diff(X, y, cat, n_fold=n_fold)
+        best_threshold = th.get_best_threshold(df)
+        for i, result in enumerate(result_list):
+            print(f'\t {i} fold run: search threshold {result}')
+    else:
+        best_threshold = threshold
+    print('\nThreshold already given = ', best_threshold)
 
     # 3. Training
     print('\n[Step 3/3] Start Training ... \n')
@@ -91,7 +94,7 @@ def train(action='cv', file_name='submit001', feature='new', feature_fname='feat
         print('>> Avg Cross Validation : {}'.format(sum(res) / len(res)))
         print('>> base line : 0.6034704709308101')
     elif action == 'submit':
-        split, gain = train_submit(dataset, cat, not_train + need_encode, file_name=file_name)
+        split, gain = train_submit(dataset, cat, not_train + need_encode, threshold=best_threshold, file_name=file_name)
         print('\nPrediction written to ./submit/{}.csv'.format(file_name))
 
 def parse_args():
@@ -101,6 +104,7 @@ def parse_args():
     parser.add_argument("--feature_fname", "-fn", default='feature_ver1', type=str)
     parser.add_argument("--output_fname", "-on", default='submit001', type=str)
     parser.add_argument("--n_fold", "-n", default=5, type=int)
+    parser.add_argument("--threshold", "-t", type=float)
     args = parser.parse_args()
     return args
 
@@ -113,5 +117,6 @@ if __name__ == '__main__':
         file_name=args.output_fname,
         feature=args.feature,
         feature_fname=args.feature_fname,
-        n_fold=args.n_fold
+        n_fold=args.n_fold,
+        threshold=args.threshold
     )

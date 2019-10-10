@@ -82,7 +82,7 @@ class CrossValidate():
         for i in range(n_fold):
             train_data = lgb.Dataset(data=Xs[i], label=ys[i], categorical_feature=cat)
             val_data = lgb.Dataset(data=Xs[i], label=ys[i], reference=train_data, categorical_feature=cat)
-            res.append(lgb_train(train_data, val_data, boost_round, random_seed))
+            res.append(lgb_train(train_data, val_data, threshold=self.threshold, boost_round=boost_round, random_seed=random_seed))
             del train_data, val_data
             gc.collect()
         del Xs, ys

@@ -39,7 +39,7 @@ class Threshold():
         search_result = {'threshold': best_th , 'f1': best_score}
         return search_result 
 
-    def calc_threshold_diff(self, X, y, cat, n_fold, boost_round=100):
+    def calc_threshold_diff(self, X, y, cat, n_fold, boost_round=1000):
         '''
         Use expanding window method to record each threshold difference from the fold's best f1 score.
 
