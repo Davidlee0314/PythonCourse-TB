@@ -94,7 +94,7 @@ def train(action='cv', file_name='submit001', feature='new', feature_fname='feat
         print('>> Avg Cross Validation : {}'.format(sum(res) / len(res)))
         print('>> base line : 0.6034704709308101')
     elif action == 'submit':
-        split, gain = train_submit(dataset, cat, not_train + need_encode, threshold=best_threshold, file_name=file_name)
+        model = train_submit(dataset, cat, not_train + need_encode, threshold=best_threshold, file_name=file_name)
         print('\nPrediction written to ./submit/{}.csv'.format(file_name))
 
 def parse_args():
