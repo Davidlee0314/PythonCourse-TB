@@ -1,5 +1,6 @@
 import gc
 import os
+import argparse
 
 # import pickle as pkl
 # import pandas as pd
@@ -66,11 +67,10 @@ def eval(model, testset_loader, threshold=0.15):
     print('\nEval set: \n\tAverage loss: {:.4f} \n\tAccuracy: {:.0f}% ({}/{}) \n\tF1 Score: {}\n'.format(
         test_loss, 100. * correct / len(testset_loader.dataset), correct, len(testset_loader.dataset), f1))
 
-def train_save(model, trainset_loader, testset_loader, epoch, save_interval, log_interval=100, device='cpu'):
-    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+def train_save(model, trainset_loader, testset_loader, opt, epoch=5, save_interval=500, log_interval=100, device='cpu'):
+    optimizer = optim.Adam(model.parameters(), lr=opt.lr, betas=(0.9, 0.999))
+    # optimizer = optim.SGD(model.parameters(), lr=opt.lr, momentum=0.9)
     criterion = nn.CrossEntropyLoss()
-    
-    eval(model, testset_loader)
 
     iteration = 0
     for ep in range(epoch):
@@ -88,8 +88,9 @@ def train_save(model, trainset_loader, testset_loader, epoch, save_interval, log
                     ep, batch_idx * len(features), len(trainset_loader.dataset),
                     100. * batch_idx / len(trainset_loader), loss.item()))
             if iteration % save_interval == 0 and iteration > 0:
-                save_checkpoint('./models/NetOrigin_%i.pth' % iteration, model, optimizer)
+                save_checkpoint('./models/NetOrigin_backup.pth', model, optimizer)
             iteration += 1
+        save_checkpoint('./models/NetOrigin_epoch_{}.pth'.format(epoch), model, optimizer)
         eval(model, testset_loader)
     
     # save the final model
@@ -103,7 +104,28 @@ def get_device():
     print('Device used:', device)
     return device
 
+def args_parse():
+    parser = argparse.ArgumentParser()
+
+    # parser.add_argument('--output_folder', default='DCGAN_output', help='folder to output images and model checkpoints')
+    parser.add_argument("--epoch", type=int, default=5, help="number of epoches of training")
+    parser.add_argument("--lr", type=float, default=1e-3, help="adam: learning rate")
+    parser.add_argument('--batch_size', type=int, default=128, help='input batch size')
+    parser.add_argument('--valid_size', type=int, default=1000, help='input valid size') # 769
+
+    # parser.add_argument("--img_size", type=int, default=224, help="size of each image dimension")
+    # parser.add_argument("--sample_interval", type=int, default=400, help="interval betwen image samples")
+    # parser.add_argument('--model_path', default='', help="path to model (to continue training)")
+    # parser.add_argument('--load_features', action='store_true', help="used when training (saveing time to run resnet, will load pre-processed CNN_features of videos [frames, 3, 224, 224])")
+
+    opt = parser.parse_args()
+    print(opt)
+    return opt
+
 if __name__ == '__main__':
+    # parse training args
+    opt = args_parse()
+
     # get dataset 
     trainset = Features(data_type='train', action='new', feature_fname='FeatureOrigin')
     valset = Features(data_type='val', action='new', feature_fname='FeatureOrigin')
@@ -111,15 +133,15 @@ if __name__ == '__main__':
     print('rows in valset:', len(valset)) # Should print 304358
 
     # Use the torch dataloader to iterate through the dataset
-    trainset_loader = DataLoader(trainset, batch_size=128, shuffle=True)
-    valset_loader = DataLoader(valset, batch_size=1000, shuffle=False)
+    trainset_loader = DataLoader(trainset, batch_size=opt.batch_size, shuffle=True)
+    valset_loader = DataLoader(valset, batch_size=opt.valid_size, shuffle=False)
 
     device = get_device()
     model = Net().to(device) # Remember to move the model to "device"
     print(model)
 
     print('Start Training ...\n')
-    train_save(model, trainset_loader, valset_loader, epoch=5, save_interval=500, log_interval=100)
+    train_save(model, trainset_loader, valset_loader, opt, epoch=opt.epoch, save_interval=500, log_interval=100)
 
 
 
