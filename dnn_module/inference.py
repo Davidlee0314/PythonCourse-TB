@@ -26,6 +26,7 @@ def load_checkpoint(checkpoint_path, model):
 def inference(model, testset_loader, threshold):
     print('Start Inferencing ...')
     os.makedirs('./submit/', exist_ok=True)
+    softmax = nn.Softmax()
     model.eval()  # Important: set evaluation mode
 
     ids_all = None
@@ -38,8 +39,8 @@ def inference(model, testset_loader, threshold):
             features, _ids = features.to(device), ids.squeeze(1).to(device)
             output = model(features)
             pred_max = output.max(1, keepdim=True)[1] # get the index of the max log-probability
-            
-            pred_threshold = output.sigmoid().cpu() > threshold
+
+            pred_threshold = softmax(output).cpu() > threshold
             if ids_all is not None:
                 ids_all = torch.cat([ids_all, ids], dim=0)
                 pure_output_all = torch.cat([pure_output_all, output], dim=0)
@@ -55,13 +56,14 @@ def inference(model, testset_loader, threshold):
         pure_output_all = pure_output_all.detach().numpy()
         pred_max_all = pred_max_all.detach().numpy()
         pred_threshold_all = pred_threshold_all.detach().numpy()
+        pred_threshold_all = pred_threshold_all[:, 1]
         
         id_output = np.concatenate((ids_all, pure_output_all), axis=1)
         id_pred_max = np.concatenate((ids_all, pred_max_all), axis=1)
         id_pred_threshold = np.concatenate((ids_all, pred_threshold_all), axis=1)
-        np.savetxt('./submit/id_output.csv', id_output, delimiter=',', fmt='%0.4f', header='txkey,output')
+        np.savetxt('./submit/id_pure_output.csv', id_output, delimiter=',', fmt='%0.4f', header='txkey,output')
         np.savetxt('./submit/id_pred_max.csv', id_pred_max, delimiter=',', fmt='%d', header='txkey,fraud_ind')
-        np.savetxt('./submit/id_pred_threshold.csv', id_pred_threshold, delimiter=',', fmt='%d', header='txkey,fraud_ind')
+        np.savetxt('./submit/id_pred_softmax_threshold.csv', id_pred_threshold, delimiter=',', fmt='%d', header='txkey,fraud_ind')
 
 def get_device():
     # Use GPU if available, otherwise stick with cpu
