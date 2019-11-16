@@ -12,7 +12,7 @@ from Utils.Feature import FeatureEngineer
 from Utils import read_data
 
 class Features(Dataset):
-    def __init__(self, data_type='train', model_type='cnn', action='new', feature_fname='FeatureOrigin'):
+    def __init__(self, dim='1d', data_type='train', model_type='cnn', action='new', feature_fname='FeatureOrigin'):
         """ Intialize the dataset """
         self.TRAIN_SHAPE = 1521787
         self.VAL_SHAPE = int(1521787 * 0.8)
@@ -25,6 +25,7 @@ class Features(Dataset):
 
         self.data_type = data_type
         self.model_type = model_type
+        self.dim = dim  # 1d / 2d
         self.dataset = self.get_engineered_data(data_type, action, feature_fname)
         if model_type == 'cnn':
             self.len = self.dataset.shape[0]    # DataFrame
@@ -34,25 +35,25 @@ class Features(Dataset):
     def __getitem__(self, index):
         """ Get a sample from the dataset """
         if self.model_type == 'cnn':
+            row_feature = self.dataset.iloc[index]
             if self.data_type == 'test':
-                row_feature = self.dataset.iloc[index]
-
-                id = int(row_feature['txkey'])
-                row_feature = row_feature.drop(labels=["txkey"])
-                id = torch.tensor([id])
-                row_feature = torch.tensor(list(row_feature))
-                return row_feature, id
+                key = 'txkey'
             elif self.data_type in ['train', 'val']:
-                row_feature = self.dataset.iloc[index]
-
-                label = int(row_feature['fraud_ind'])
-                row_feature = row_feature.drop(labels=["fraud_ind"])
-                label = torch.tensor([label])
-                row_feature = torch.tensor(list(row_feature))
-                # print(row_feature.shape)
-                # print('label :', label)
-                # print('type(label) :', type(label))
-                return row_feature, label
+                key = 'fraud_ind'
+            label_or_id = int(row_feature[key])
+            row_feature = row_feature.drop(labels=[key])
+            label_or_id = torch.tensor([label_or_id])
+            row_feature = torch.tensor(list(row_feature))
+            if self.dim == '2d':
+                zero = torch.zeros(42)
+                row_feature = torch.cat([row_feature , zero])
+                row_feature = row_feature.view(24, 24)
+            elif self.dim == '1d':
+                pass
+            # print(row_feature.shape)
+            # print('label(train val) or id(test) :', label_or_id)
+            # print('type(label_or_id) :', type(label_or_id))
+            return row_feature, label_or_id
         elif self.model_type == 'rnn':
             # TODO : design for LSTM input
             pass

@@ -95,7 +95,7 @@ def args_parse(a=0, g=1, t=1):
 
 if __name__ == '__main__':
     # parse training args
-    opt = args_parse(a=0, g=1, t=1)
+    opt = args_parse(a=0, g=0, t=0)
     model_path = os.path.join('.', 'models', '{}_final.pth'.format(opt.model_name))
 
     # get dataset 
