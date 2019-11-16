@@ -64,7 +64,7 @@ def eval(model, testset_loader, criterion, threshold):
     print('\nEval set: \n\tAverage loss: {:.4f} \n\tAccuracy: {:.0f}% ({}/{}) \n\tF1 Score: {}\n'.format(
         test_loss, 100. * correct / len(testset_loader.dataset), correct, len(testset_loader.dataset), f1))
 
-def train_save(model, trainset_loader, testset_loader, opt, epoch=5, save_interval=4000, log_interval=100, device='cpu'):
+def train_save(model, trainset_loader, testset_loader, opt, epoch=5, save_interval=4000, log_interval=1000, device='cpu'):
     optimizer = optim.Adam(model.parameters(), lr=opt.lr, betas=(0.9, 0.999))
     # optimizer = optim.SGD(model.parameters(), lr=opt.lr, momentum=0.9)
     criterion = FocalLoss(alpha=opt.alpha, gamma=opt.gamma)
@@ -108,7 +108,7 @@ def args_parse(a=0, g=0, t=0):
 
     parser.add_argument("--epoch", type=int, default=5, help="number of epoches of training")
     parser.add_argument("--lr", type=float, default=1e-3, help="adam: learning rate")
-    parser.add_argument('--batch_size', type=int, default=128, help='input batch size')
+    parser.add_argument('--batch_size', type=int, default=512, help='input batch size')
     parser.add_argument('--valid_size', type=int, default=1000, help='input valid size') # 769
 
     alpha_list = [0.25, 0.5, 0.75]          # 3
@@ -136,7 +136,7 @@ if __name__ == '__main__':
     print('rows in valset:', len(valset)) # Should print 304358
 
     # Use the torch dataloader to iterate through the dataset
-    trainset_loader = DataLoader(trainset, batch_size=opt.batch_size, shuffle=False)
+    trainset_loader = DataLoader(trainset, batch_size=opt.batch_size, shuffle=True)
     valset_loader = DataLoader(valset, batch_size=opt.valid_size, shuffle=False)
 
     device = get_device()
@@ -150,10 +150,10 @@ if __name__ == '__main__':
                 for alpha in range(3):
                     opt = args_parse(a=alpha, g=gamma, t=threshold)
                     print('\n\n\nStart Tuning Focal_a{}_g{}_t{} :\n'.format(str(alpha), str(gamma), str(threshold)))
-                    train_save(model, trainset_loader, valset_loader, opt, epoch=opt.epoch, save_interval=5000, log_interval=100, device=device)
+                    train_save(model, trainset_loader, valset_loader, opt, epoch=opt.epoch, save_interval=5000, log_interval=1000, device=device)
     elif opt.train_type == 'train':
         print('Start Training ...\n')
-        train_save(model, trainset_loader, valset_loader, opt, epoch=opt.epoch, save_interval=5000, log_interval=100, device=device)
+        train_save(model, trainset_loader, valset_loader, opt, epoch=opt.epoch, save_interval=5000, log_interval=1000, device=device)
     elif opt.train_type == 'sample':
         # get some random training samples
         dataiter = iter(trainset_loader)
