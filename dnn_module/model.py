@@ -34,7 +34,7 @@ class Net(nn.Module):
             nn.ReLU(),
             nn.Dropout(0.5)
         )
-        self.fc5 = nn.Linear(32, 2)
+        self.fc4 = nn.Linear(32, 2)
 
     def forward(self, x):
         # print('input x.shape :', x.shape)
