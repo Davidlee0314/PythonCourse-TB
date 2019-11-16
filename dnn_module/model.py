@@ -29,18 +29,12 @@ class Net(nn.Module):
             # nn.Dropout(0.5)
         )
         self.fc3 = nn.Sequential(
-            nn.Linear(128, 64),
-            nn.BatchNorm1d(64),
+            nn.Linear(128, 32),
+            nn.BatchNorm1d(32),
             nn.ReLU(),
             nn.Dropout(0.5)
         )
-        self.fc4 = nn.Sequential(
-            nn.Linear(64, 16),
-            nn.BatchNorm1d(16),
-            nn.ReLU(),
-            # nn.Dropout(0.5)
-        )
-        self.fc5 = nn.Linear(16, 2)
+        self.fc5 = nn.Linear(32, 2)
 
     def forward(self, x):
         # print('input x.shape :', x.shape)
@@ -56,9 +50,6 @@ class Net(nn.Module):
 
         x = self.fc4(x)
         # print('fc4 x.shape :', x.shape)
-
-        x = self.fc5(x)
-        # print('fc5 x.shape :', x.shape)
 
         # soft max   >>  CE loss 自動轉 target 成為 one hot ，因此不需要 softmax 
 

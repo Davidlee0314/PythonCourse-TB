@@ -64,7 +64,7 @@ def eval(model, testset_loader, criterion, threshold):
     print('\nEval set: \n\tAverage loss: {:.4f} \n\tAccuracy: {:.0f}% ({}/{}) \n\tF1 Score: {}\n'.format(
         test_loss, 100. * correct / len(testset_loader.dataset), correct, len(testset_loader.dataset), f1))
 
-def train_save(model, trainset_loader, testset_loader, opt, epoch=5, save_interval=4000, log_interval=1000, device='cpu'):
+def train_save(model, trainset_loader, testset_loader, opt, epoch=5, save_interval=4000, log_interval=100, device='cpu'):
     optimizer = optim.Adam(model.parameters(), lr=opt.lr, betas=(0.9, 0.999))
     # optimizer = optim.SGD(model.parameters(), lr=opt.lr, momentum=0.9)
     criterion = FocalLoss(alpha=opt.alpha, gamma=opt.gamma)
@@ -150,10 +150,10 @@ if __name__ == '__main__':
                 for alpha in range(3):
                     opt = args_parse(a=alpha, g=gamma, t=threshold)
                     print('\n\n\nStart Tuning Focal_a{}_g{}_t{} :\n'.format(str(alpha), str(gamma), str(threshold)))
-                    train_save(model, trainset_loader, valset_loader, opt, epoch=opt.epoch, save_interval=5000, log_interval=200, device=device)
+                    train_save(model, trainset_loader, valset_loader, opt, epoch=opt.epoch, save_interval=5000, log_interval=100, device=device)
     elif opt.train_type == 'train':
         print('Start Training ...\n')
-        train_save(model, trainset_loader, valset_loader, opt, epoch=opt.epoch, save_interval=5000, log_interval=200, device=device)
+        train_save(model, trainset_loader, valset_loader, opt, epoch=opt.epoch, save_interval=5000, log_interval=100, device=device)
     elif opt.train_type == 'sample':
         # get some random training samples
         dataiter = iter(trainset_loader)
