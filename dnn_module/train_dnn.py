@@ -104,6 +104,7 @@ def get_device():
 
 def args_parse(a=0, g=0, t=0):
     parser = argparse.ArgumentParser()
+    parser.add_argument("--train_type", type=str, default='train', choices=['train', 'tune'], help="action to load or generate new features")
 
     parser.add_argument("--epoch", type=int, default=5, help="number of epoches of training")
     parser.add_argument("--lr", type=float, default=1e-3, help="adam: learning rate")
@@ -116,7 +117,7 @@ def args_parse(a=0, g=0, t=0):
 
     print('\n\n\nTuning Focal_a{}_g{}_t{}'.format(str(a), str(g), str(t)))
 
-    parser.add_argument("--action", type=str, default='load', choices=['load', 'new'], help="action to load or generate new features")
+    parser.add_argument("--action", type=str, default='load', choices=['load', 'new', 'sample'], help="action to load or generate new features")
     parser.add_argument("--model_name", type=str, default='Focal_a{}_g{}_t{}'.format(str(a), str(g), str(t)), help="model name for saving pth file")
     parser.add_argument('--alpha', type=float, default=alpha_list[a], help='alpha param of focal loss')
     parser.add_argument('--gamma', type=float, default=gamma_list[g], help='gamma param of focal loss')
@@ -128,7 +129,7 @@ def args_parse(a=0, g=0, t=0):
 
 if __name__ == '__main__':
     # parse training args
-    opt = args_parse()
+    opt = args_parse(a=0, g=0, t=0)
 
     # get dataset 
     trainset = Features(data_type='train', action=opt.action, feature_fname='FeatureOrigin')
@@ -144,18 +145,21 @@ if __name__ == '__main__':
     model = Net().to(device) # Remember to move the model to "device"
     print(model)
 
-    print('Start Tuning Process ...')
-    for threshold in range(3):
-        for gamma in range(4):
-            for alpha in range(3):
-                opt = args_parse(a=alpha, g=gamma, t=threshold)
-                print('Start Training ...\n')
-                train_save(model, trainset_loader, valset_loader, opt, epoch=opt.epoch, save_interval=5000, log_interval=100)
-
-
-    # get some random training samples
-    # dataiter = iter(trainset_loader)
-    # features, labels = dataiter.next()
-    # print('Feature tensor in each batch:', features.shape, features.dtype)
-    # print('Label tensor in each batch:', labels.shape, labels.dtype)
+    if opt.train_type == 'tune':
+        print('Start Tuning Process ...')
+        for threshold in range(3):
+            for gamma in range(4):
+                for alpha in range(3):
+                    opt = args_parse(a=alpha, g=gamma, t=threshold)
+                    print('Start Training ...\n')
+                    train_save(model, trainset_loader, valset_loader, opt, epoch=opt.epoch, save_interval=5000, log_interval=100)
+    elif opt.train_type == 'train':
+        print('Start Training ...\n')
+        train_save(model, trainset_loader, valset_loader, opt, epoch=opt.epoch, save_interval=5000, log_interval=100)
+    elif opt.train_type == 'sample':
+        # get some random training samples
+        dataiter = iter(trainset_loader)
+        features, labels = dataiter.next()
+        print('Feature tensor in each batch:', features.shape, features.dtype)
+        print('Label tensor in each batch:', labels.shape, labels.dtype)
 
