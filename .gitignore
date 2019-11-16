@@ -10,3 +10,4 @@ __pycache__/
 /dnn_module/models/
 /Notebook/mine/
 /submit/
+*.csv

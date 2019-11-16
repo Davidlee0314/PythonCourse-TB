@@ -12,33 +12,50 @@ from Utils.Feature import FeatureEngineer
 from Utils import read_data
 
 class Features(Dataset):
-    def __init__(self, data_type='train', action='new', feature_fname='FeatureOrigin'):
+    def __init__(self, data_type='train', model_type='cnn', action='new', feature_fname='FeatureOrigin'):
         """ Intialize the dataset """
         self.TRAIN_SHAPE = 1521787
         self.VAL_SHAPE = int(1521787 * 0.8)
         self.not_train = ['txkey', 'date', 'time']  # fraud_ind
+        self.not_test = ['date', 'time', 'fraud_ind']
         self.need_encode = ['acquirer', 'bank', 'card', 'coin', 'mcc', 'shop', 'city', 'nation']
         self.category_col_list = ['status', 'trade_cat', 'pay_type', 'trade_type', '3ds', 'fallback', 'hour']
         self.feature_root = './features/'
         os.makedirs(self.feature_root, exist_ok=True)
 
+        self.data_type = data_type
+        self.model_type = model_type
         self.dataset = self.get_engineered_data(data_type, action, feature_fname)
-        self.len = self.dataset.shape[0]
-        
+        if model_type == 'cnn':
+            self.len = self.dataset.shape[0]    # DataFrame
+        elif model_type == 'rnn':
+            self.len = len(self.dataset)        # list of DataFrames
                               
     def __getitem__(self, index):
         """ Get a sample from the dataset """
-        row_feature = self.dataset.iloc[index]
+        if self.model_type == 'cnn':
+            if self.data_type == 'test':
+                row_feature = self.dataset.iloc[index]
 
-        label = int(row_feature['fraud_ind'])
-        row_feature = row_feature.drop(labels=["fraud_ind"])
-        label = torch.tensor([label])
-        row_feature = torch.tensor(list(row_feature))
-        # print(row_feature.shape)
-        # print('label :', label)
-        # print('type(label) :', type(label))
+                id = int(row_feature['txkey'])
+                row_feature = row_feature.drop(labels=["txkey"])
+                id = torch.tensor([id])
+                row_feature = torch.tensor(list(row_feature))
+                return row_feature, id
+            elif self.data_type in ['train', 'val']:
+                row_feature = self.dataset.iloc[index]
 
-        return row_feature, label
+                label = int(row_feature['fraud_ind'])
+                row_feature = row_feature.drop(labels=["fraud_ind"])
+                label = torch.tensor([label])
+                row_feature = torch.tensor(list(row_feature))
+                # print(row_feature.shape)
+                # print('label :', label)
+                # print('type(label) :', type(label))
+                return row_feature, label
+        elif self.model_type == 'rnn':
+            # TODO : design for LSTM input
+            pass
 
     def __len__(self):
         """ Total number of samples in the dataset """
@@ -46,20 +63,20 @@ class Features(Dataset):
 
     def get_engineered_data(self, data_type, action, feature_fname):
         feature_path = os.path.join(self.feature_root, feature_fname+'.pkl')
-
-        ###
-        if os.path.exists(feature_path):
-            print("action = 'load'")
-            action = 'load'
-        else:
-            print("action = 'new'")
-            action = 'new'
-        ###
-
+        test_feature_path = os.path.join(self.feature_root, feature_fname+'_test.pkl')
         if action == 'load':
-            with open(feature_path, 'rb') as file:
-                combine = pkl.load(file)
-            print('Features loaded (from {})'.format(feature_path))
+            if data_type == 'test':
+                if not os.path.exists(test_feature_path):
+                    raise FileNotFoundError('{} not exists, please select another file.'.format(test_feature_path))
+                with open(test_feature_path, 'rb') as file:
+                    testset = pkl.load(file)
+                print('Test Features loaded (from {})'.format(test_feature_path))
+            elif data_type in ['train', 'val']:
+                if not os.path.exists(feature_path):
+                    raise FileNotFoundError('{} not exists, please select another file.'.format(feature_path))
+                with open(feature_path, 'rb') as file:
+                    train_val = pkl.load(file)
+                print('Features loaded (from {})'.format(feature_path))
         elif action == 'new':
             # get basic train test data
             train = read_data.read('../data/train_mr.pkl')
@@ -80,7 +97,11 @@ class Features(Dataset):
                 'need_encode_sum_money.pkl', 
                 'tradenum_bank-col.pkl', 
                 'tradenum_col-col.pkl', 
-                'tradenum_bank-col-col.pkl',    # 'group_col.pkl' , 'again&group.pkl'
+                'tradenum_bank-col-col.pkl',
+                'embed_money.pkl',
+                'embed_online.pkl',
+                'embed_tradetype.pkl',
+                'graph_embed_w3.pkl'
             ]
             files_list = [prefix + x for x in file_names]
             for file_name in files_list:
@@ -99,30 +120,48 @@ class Features(Dataset):
             combine.fillna(value=-1, inplace=True)
             print('dataset.shape (after get_dummies / fillna):', combine.shape)
 
-            # remove test set (no label)
-            combine = combine.loc[:self.TRAIN_SHAPE - 1, [x for x in combine.columns if x not in self.not_train]]
-
+            # remove some columns
+            testset = combine.loc[self.TRAIN_SHAPE:, [x for x in combine.columns if x not in self.not_test]]
+            train_val = combine.loc[:self.TRAIN_SHAPE - 1, [x for x in combine.columns if x not in self.not_train]]
+            del combine
+            gc.collect()
             # save features
+            with open(test_feature_path, 'wb') as file:
+                pkl.dump(testset, file)
             with open(feature_path, 'wb') as file:
-                pkl.dump(combine, file)
-
-        # split train_set / val_set
-        val_set = combine.iloc[self.VAL_SHAPE:]
-        train_set = combine.iloc[:self.VAL_SHAPE - 1]
-        print('dataset.shape (after get_dummies / ignore not_train):', combine.shape)
-        print('train_set shape = ', train_set.shape)
-        print('val_set shape = ', val_set.shape, '\n')
-        del combine
-        gc.collect()
-
-        if data_type == 'train':
-            del val_set
+                pkl.dump(train_val, file)
+            
+        # train / val / test
+        if data_type == 'test':
+            print('testset.shape (after get_dummies / ignore not_train):', testset.shape)
+            return testset
+        elif data_type in ['train', 'val']:
+            # split train_set / val_set
+            val_set = train_val.iloc[self.VAL_SHAPE:]
+            train_set = train_val.iloc[:self.VAL_SHAPE - 1]
+            print('dataset.shape (after get_dummies / ignore not_train):', train_val.shape)
+            print('train_set shape = ', train_set.shape)
+            print('val_set shape = ', val_set.shape, '\n')
+            del train_val
             gc.collect()
-            return train_set
-        elif data_type == 'val':
-            del train_set
-            gc.collect()
-            return val_set
+
+            if data_type == 'train':
+                del val_set
+                gc.collect()
+                output_set = train_set
+            elif data_type == 'val':
+                del train_set
+                gc.collect()
+                output_set = val_set
+
+            if self.model_type == 'cnn':
+                return output_set    # DataFrame
+            elif self.model_type == 'rnn':
+                SubDFList = []
+                for item in output_set['bank'].unique():
+                    sub_df = output_set[output_set['bank'] == item]
+                    SubDFList.append(sub_df)
+                return SubDFList    # list of DataFrames
 
 if __name__ == '__main__':
     trainset = Features(data_type='train', action='load', feature_fname='FeatureOrigin')

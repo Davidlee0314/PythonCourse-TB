@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import numpy as np
 
 class Net(nn.Module):
     def __init__(self):
@@ -17,16 +18,19 @@ class Net(nn.Module):
         # )
         self.fc1 = nn.Sequential(
             nn.Linear(384, 128),
+            nn.BatchNorm1d(128),
             nn.ReLU(),
             nn.Dropout(0.5)
         )
         self.fc2 = nn.Sequential(
             nn.Linear(128, 64),
+            nn.BatchNorm1d(64),
             nn.ReLU(),
-            nn.Dropout(0.5)
+            # nn.Dropout(0.5)
         )
         self.fc3 = nn.Sequential(
             nn.Linear(64, 16),
+            nn.BatchNorm1d(16),
             nn.ReLU(),
             nn.Dropout(0.5)
         )
@@ -54,11 +58,40 @@ class Net(nn.Module):
 if __name__ == "__main__":
     model = Net()
 
+    x = torch.Tensor(4, 384).uniform_(0, 1)
     # x = torch.zeros(64, 384)
-    # out = model(x)
-    # print(out.shape)
-    label = torch.tensor([[3],[0],[0],[8]])
-    onehot = torch.zeros(4, 10).scatter_(1, label, 1)
-    print(label.shape)
-    print(onehot.shape)
-    print(onehot)
+    output = model(x)
+    pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
+    print(output.shape)
+    print(output)
+    print(pred.shape)
+    print(pred)
+
+    softmax = nn.Softmax()
+    sm = softmax(output).cpu() > 0.5
+    print(sm.shape)
+    print(sm)
+
+    # pred = pred.float()
+    # combine = torch.cat([output, pred], dim=1)
+
+    output = output.detach().numpy()
+    sm = sm.detach().numpy()
+    pred = pred.detach().numpy()
+    combine = np.concatenate((output, pred), axis=1)
+
+    print(sm[:, 1])
+    sm = sm[:, 1]
+    
+
+    # np.savetxt('output.csv', output, delimiter=',', fmt='%0.4f', header='txkey,output')
+    np.savetxt('softmax.csv', sm, delimiter=',', fmt='%0.4f', header='txkey,softmax')
+    # np.savetxt('pred.csv', pred, delimiter=',', fmt='%0.4f', header='txkey,pred')
+    # np.savetxt('pred.csv', pred, delimiter=',', fmt='%d', header='txkey,pred')
+    # np.savetxt('combine.csv', combine, delimiter=',', fmt='%d', header='txkey,combine')
+
+    # label = torch.tensor([[3],[0],[0],[8]])
+    # onehot = torch.zeros(4, 10).scatter_(1, label, 1)
+    # print(label.shape)
+    # print(onehot.shape)
+    # print(onehot)

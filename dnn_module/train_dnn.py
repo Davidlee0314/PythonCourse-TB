@@ -15,6 +15,7 @@ from sklearn.metrics import f1_score
 
 from dataset import Features
 from model import Net
+from loss import FocalLoss
 
 
 def save_checkpoint(checkpoint_path, model, optimizer):
@@ -31,14 +32,8 @@ def load_checkpoint(checkpoint_path, model, optimizer):
     optimizer.load_state_dict(state['optimizer'])
     print('model loaded from %s' % checkpoint_path)
 
-def lgb_f1_score(y_hat, data, THRESHOLD=0.248):
-    y_true = data.get_label()
-    y_hat = np.where(y_hat >= THRESHOLD, 1, 0)
-    return 'f1', f1_score(y_true, y_hat), True
-
-def eval(model, testset_loader, threshold=0.15):
+def eval(model, testset_loader, criterion, threshold):
     print('Start Evaluating ...')
-    criterion = nn.CrossEntropyLoss()
     model.eval()  # Important: set evaluation mode
     test_loss = 0
     correct = 0
@@ -61,16 +56,19 @@ def eval(model, testset_loader, threshold=0.15):
 
     rows = labels_all.shape[0]
     labels_onehot = torch.zeros(rows, 2).scatter_(1, labels_all, 1)
-    f1 = f1_score(labels_onehot.cpu(), output_all.sigmoid().cpu() > threshold, average='macro')
+    # 考慮類別的不平衡性，需要計算類別的加權平均 , average='weighted', 'macro'
+    softmax = nn.Softmax()
+    f1 = f1_score(labels_onehot.cpu(), softmax(output_all).cpu() > threshold, average='weighted')
 
     test_loss /= len(testset_loader.dataset)
     print('\nEval set: \n\tAverage loss: {:.4f} \n\tAccuracy: {:.0f}% ({}/{}) \n\tF1 Score: {}\n'.format(
         test_loss, 100. * correct / len(testset_loader.dataset), correct, len(testset_loader.dataset), f1))
 
-def train_save(model, trainset_loader, testset_loader, opt, epoch=5, save_interval=500, log_interval=100, device='cpu'):
+def train_save(model, trainset_loader, testset_loader, opt, epoch=5, save_interval=4000, log_interval=100, device='cpu'):
     optimizer = optim.Adam(model.parameters(), lr=opt.lr, betas=(0.9, 0.999))
     # optimizer = optim.SGD(model.parameters(), lr=opt.lr, momentum=0.9)
-    criterion = nn.CrossEntropyLoss()
+    criterion = FocalLoss(alpha=opt.alpha, gamma=opt.gamma)
+    # criterion = nn.CrossEntropyLoss()
 
     iteration = 0
     for ep in range(epoch):
@@ -88,13 +86,13 @@ def train_save(model, trainset_loader, testset_loader, opt, epoch=5, save_interv
                     ep, batch_idx * len(features), len(trainset_loader.dataset),
                     100. * batch_idx / len(trainset_loader), loss.item()))
             if iteration % save_interval == 0 and iteration > 0:
-                save_checkpoint('./models/NetOrigin_backup.pth', model, optimizer)
+                save_checkpoint('./models/{}_backup.pth'.format(opt.model_name), model, optimizer)
             iteration += 1
-        save_checkpoint('./models/NetOrigin_epoch_{}.pth'.format(epoch), model, optimizer)
-        eval(model, testset_loader)
+        # save_checkpoint('./models/{}_epoch_{}.pth'.format(opt.model_name, epoch), model, optimizer)
+        eval(model, testset_loader, criterion, threshold=opt.threshold)
     
     # save the final model
-    save_checkpoint('./models/NetOrigin_final.pth' % iteration, model, optimizer)
+    save_checkpoint('./models/{}_final.pth'.format(opt.model_name), model, optimizer)
 
 def get_device():
     # Use GPU if available, otherwise stick with cpu
@@ -104,19 +102,25 @@ def get_device():
     print('Device used:', device)
     return device
 
-def args_parse():
+def args_parse(a=0, g=0, t=0):
     parser = argparse.ArgumentParser()
 
-    # parser.add_argument('--output_folder', default='DCGAN_output', help='folder to output images and model checkpoints')
     parser.add_argument("--epoch", type=int, default=5, help="number of epoches of training")
     parser.add_argument("--lr", type=float, default=1e-3, help="adam: learning rate")
     parser.add_argument('--batch_size', type=int, default=128, help='input batch size')
     parser.add_argument('--valid_size', type=int, default=1000, help='input valid size') # 769
 
-    # parser.add_argument("--img_size", type=int, default=224, help="size of each image dimension")
-    # parser.add_argument("--sample_interval", type=int, default=400, help="interval betwen image samples")
-    # parser.add_argument('--model_path', default='', help="path to model (to continue training)")
-    # parser.add_argument('--load_features', action='store_true', help="used when training (saveing time to run resnet, will load pre-processed CNN_features of videos [frames, 3, 224, 224])")
+    alpha_list = [0.25, 0.5, 0.75]          # 3
+    gamma_list = [0.5, 1, 2, 5]             # 4
+    threshold_list = [0.15, 0.248, 0.4]     # 3
+
+    print('\n\n\nTuning Focal_a{}_g{}_t{}'.format(str(a), str(g), str(t)))
+
+    parser.add_argument("--action", type=str, default='load', choices=['load', 'new'], help="action to load or generate new features")
+    parser.add_argument("--model_name", type=str, default='Focal_a{}_g{}_t{}'.format(str(a), str(g), str(t)), help="model name for saving pth file")
+    parser.add_argument('--alpha', type=float, default=alpha_list[a], help='alpha param of focal loss')
+    parser.add_argument('--gamma', type=float, default=gamma_list[g], help='gamma param of focal loss')
+    parser.add_argument('--threshold', type=float, default=threshold_list[t], help='alpha param of focal loss')
 
     opt = parser.parse_args()
     print(opt)
@@ -127,23 +131,26 @@ if __name__ == '__main__':
     opt = args_parse()
 
     # get dataset 
-    trainset = Features(data_type='train', action='new', feature_fname='FeatureOrigin')
-    valset = Features(data_type='val', action='new', feature_fname='FeatureOrigin')
+    trainset = Features(data_type='train', action=opt.action, feature_fname='FeatureOrigin')
+    valset = Features(data_type='val', action=opt.action, feature_fname='FeatureOrigin')
     print('rows in trainset:', len(trainset)) # Should print 1217428
     print('rows in valset:', len(valset)) # Should print 304358
 
     # Use the torch dataloader to iterate through the dataset
-    trainset_loader = DataLoader(trainset, batch_size=opt.batch_size, shuffle=True)
+    trainset_loader = DataLoader(trainset, batch_size=opt.batch_size, shuffle=False)
     valset_loader = DataLoader(valset, batch_size=opt.valid_size, shuffle=False)
 
     device = get_device()
     model = Net().to(device) # Remember to move the model to "device"
     print(model)
 
-    print('Start Training ...\n')
-    train_save(model, trainset_loader, valset_loader, opt, epoch=opt.epoch, save_interval=500, log_interval=100)
-
-
+    print('Start Tuning Process ...')
+    for threshold in range(3):
+        for gamma in range(4):
+            for alpha in range(3):
+                opt = args_parse(a=alpha, g=gamma, t=threshold)
+                print('Start Training ...\n')
+                train_save(model, trainset_loader, valset_loader, opt, epoch=opt.epoch, save_interval=5000, log_interval=100)
 
 
     # get some random training samples
