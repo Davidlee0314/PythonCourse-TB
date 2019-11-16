@@ -152,10 +152,10 @@ if __name__ == '__main__':
                 for alpha in range(3):
                     opt = args_parse(a=alpha, g=gamma, t=threshold)
                     print('Start Training ...\n')
-                    train_save(model, trainset_loader, valset_loader, opt, epoch=opt.epoch, save_interval=5000, log_interval=100)
+                    train_save(model, trainset_loader, valset_loader, opt, epoch=opt.epoch, save_interval=5000, log_interval=100, device=device)
     elif opt.train_type == 'train':
         print('Start Training ...\n')
-        train_save(model, trainset_loader, valset_loader, opt, epoch=opt.epoch, save_interval=5000, log_interval=100)
+        train_save(model, trainset_loader, valset_loader, opt, epoch=opt.epoch, save_interval=5000, log_interval=100, device=device)
     elif opt.train_type == 'sample':
         # get some random training samples
         dataiter = iter(trainset_loader)
