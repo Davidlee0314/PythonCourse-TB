@@ -12,7 +12,7 @@ from Utils.Feature import FeatureEngineer
 from Utils import read_data
 
 class Features(Dataset):
-    def __init__(self, dim='1d', data_type='train', model_type='cnn', action='new', feature_fname='FeatureOrigin'):
+    def __init__(self, dim='1D', data_type='train', model_type='cnn', action='new', feature_fname='FeatureOrigin'):
         """ Intialize the dataset """
         self.TRAIN_SHAPE = 1521787
         self.VAL_SHAPE = int(1521787 * 0.8)
@@ -25,7 +25,7 @@ class Features(Dataset):
 
         self.data_type = data_type
         self.model_type = model_type
-        self.dim = dim  # 1d / 2d
+        self.dim = dim  # 1D / 2D
         self.dataset = self.get_engineered_data(data_type, action, feature_fname)
         if model_type == 'cnn':
             self.len = self.dataset.shape[0]    # DataFrame
@@ -44,11 +44,12 @@ class Features(Dataset):
             row_feature = row_feature.drop(labels=[key])
             label_or_id = torch.tensor([label_or_id])
             row_feature = torch.tensor(list(row_feature))
-            if self.dim == '2d':
+            if self.dim == '2D':
                 zero = torch.zeros(42)
-                row_feature = torch.cat([row_feature , zero])
-                row_feature = row_feature.view(24, 24)
-            elif self.dim == '1d':
+                row_feature = torch.cat([row_feature , zero])   # 534 + 42 = (576)
+                row_feature = row_feature.view(24, 24)          # (576) >> (24, 24)
+                row_feature = row_feature.unsqueeze(0)          # (24, 24) >> (1, 24, 24)
+            elif self.dim == '1D':
                 pass
             # print(row_feature.shape)
             # print('label(train val) or id(test) :', label_or_id)

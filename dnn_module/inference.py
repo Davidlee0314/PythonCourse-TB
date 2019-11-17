@@ -100,16 +100,16 @@ if __name__ == '__main__':
     model_path = os.path.join('.', 'models', '{}_final.pth'.format(opt.model_name))
 
     # get dataset 
-    testset = Features(data_type='test', action=opt.action, feature_fname='FeatureOrigin')
+    testset = Features(data_type='test', dim=opt.model_dim, action=opt.action, feature_fname='FeatureOrigin')
     print('rows in testset:', len(testset)) # Should print 1217428
 
     # Use the torch dataloader to iterate through the dataset
     testset_loader = DataLoader(testset, batch_size=opt.test_size, shuffle=False)
 
     device = get_device()
-    if opt.model == '1D':
+    if opt.model_dim == '1D':
         model = Net1D().to(device)
-    elif opt.model == '2D':
+    elif opt.model_dim == '2D':
         model = Net2D().to(device)
     load_checkpoint(model_path, model)
     print(model)
