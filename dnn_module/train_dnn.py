@@ -14,7 +14,7 @@ from torch.utils.data import Dataset, DataLoader
 from sklearn.metrics import f1_score
 
 from dataset import Features
-from model import Net1D
+from model import Net, Net1D, Net2D
 from loss import FocalLoss
 
 
@@ -105,6 +105,7 @@ def get_device():
 def args_parse(a=0, g=0, t=0):
     parser = argparse.ArgumentParser()
     parser.add_argument("--train_type", type=str, default='train', choices=['train', 'tune'], help="action to load or generate new features")
+    parser.add_argument("--model", type=str, default='1D', choices=['1D', '2D'], help="model choice")
 
     parser.add_argument("--epoch", type=int, default=5, help="number of epoches of training")
     parser.add_argument("--lr", type=float, default=1e-3, help="adam: learning rate")
@@ -140,7 +141,10 @@ if __name__ == '__main__':
     valset_loader = DataLoader(valset, batch_size=opt.valid_size, shuffle=False)
 
     device = get_device()
-    model = Net1D().to(device) # Remember to move the model to "device"
+    if opt.model == '1D':
+        model = Net1D().to(device)
+    elif opt.model == '2D':
+        model = Net2D().to(device)
     print(model)
 
     if opt.train_type == 'tune':

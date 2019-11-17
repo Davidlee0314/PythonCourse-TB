@@ -130,7 +130,7 @@ class Net2D(nn.Module):
         return x
 
 if __name__ == "__main__":
-    model = Net()
+    # model = Net()
     model2D = Net2D()
 
     combine = torch.Tensor(4, 576).uniform_(0, 1)
