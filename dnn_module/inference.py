@@ -14,7 +14,7 @@ from torch.utils.data import Dataset, DataLoader
 from sklearn.metrics import f1_score
 
 from dataset import Features
-from model import Net1D
+from model import Net1D, Net
 from loss import FocalLoss
 
 
@@ -30,42 +30,43 @@ def inference(model, testset_loader, threshold):
     model.eval()  # Important: set evaluation mode
 
     ids_all = None
-    pure_output_all = None
-    pred_max_all = None
-    pred_threshold_all = None
+    output_softmax_all = None
+    # pred_max_all = None
+    softmax_threshold_all = None
     with torch.no_grad(): # This will free the GPU memory used for back-prop
         for i, (features, ids) in enumerate(testset_loader):
             print('\r[{}/{}]'.format(i, len(testset_loader)), end='')
             features, _ids = features.to(device), ids.squeeze(1).to(device)
             output = model(features)
-            pred_max = output.max(1, keepdim=True)[1] # get the index of the max log-probability
+            # pred_max = output.max(1, keepdim=True)[1] # get the index of the max log-probability
 
-            pred_threshold = softmax(output).cpu() > threshold
+            softmax_threshold = softmax(output).cpu() > threshold
+            output_softmax = softmax(output).cpu()
             if ids_all is not None:
                 ids_all = torch.cat([ids_all, ids], dim=0)
-                pure_output_all = torch.cat([pure_output_all, output], dim=0)
-                pred_max_all = torch.cat([pred_max_all, pred_max], dim=0)
-                pred_threshold_all = torch.cat([pred_threshold_all, pred_threshold], dim=0)
+                output_softmax_all = torch.cat([output_softmax_all, output_softmax], dim=0)
+                # pred_max_all = torch.cat([pred_max_all, pred_max], dim=0)
+                softmax_threshold_all = torch.cat([softmax_threshold_all, softmax_threshold], dim=0)
             else:
                 ids_all = ids
-                pure_output_all = output
-                pred_max_all = pred_max
-                pred_threshold_all = pred_threshold
+                output_softmax_all = output_softmax
+                # pred_max_all = pred_max
+                softmax_threshold_all = softmax_threshold
 
         ids_all = ids_all.detach().cpu().numpy()
-        pure_output_all = pure_output_all.detach().cpu().numpy()
-        pred_max_all = pred_max_all.detach().cpu().numpy()
-        pred_threshold_all = pred_threshold_all.detach().cpu().numpy()
-        pred_threshold_all = np.expand_dims(pred_threshold_all[:, 1], axis=1)
+        output_softmax_all = output_softmax_all.detach().cpu().numpy()
+        # pred_max_all = pred_max_all.detach().cpu().numpy()
+        softmax_threshold_all = softmax_threshold_all.detach().cpu().numpy()
+        softmax_threshold_all = np.expand_dims(softmax_threshold_all[:, 1], axis=1)
         
-        id_output = np.concatenate((ids_all, pure_output_all), axis=1)
-        np.savetxt('./submit/id_pure_output.csv', id_output, delimiter=',', fmt='%0.4f', header='txkey,output')
-        id_pred_max = np.concatenate((ids_all, pred_max_all), axis=1)
-        np.savetxt('./submit/id_pred_max.csv', id_pred_max, delimiter=',', fmt='%d', header='txkey,fraud_ind')
+        id_output_softmax = np.concatenate((ids_all, output_softmax_all), axis=1)
+        np.savetxt('./submit/id_output_softmax.csv', id_output_softmax, delimiter=',', fmt='%0.4f', header='txkey,output')
+        # id_pred_max = np.concatenate((ids_all, pred_max_all), axis=1)
+        # np.savetxt('./submit/id_pred_max.csv', id_pred_max, delimiter=',', fmt='%d', header='txkey,fraud_ind')
         print(ids_all.shape)
-        print(pred_threshold_all.shape)
-        id_pred_threshold = np.concatenate((ids_all, pred_threshold_all), axis=1)
-        np.savetxt('./submit/id_pred_softmax_threshold.csv', id_pred_threshold, delimiter=',', fmt='%d', header='txkey,fraud_ind')
+        print(softmax_threshold_all.shape)
+        id_softmax_threshold = np.concatenate((ids_all, softmax_threshold_all), axis=1)
+        np.savetxt('./submit/id_softmax_threshold.csv', id_softmax_threshold, delimiter=',', fmt='%d', header='txkey,fraud_ind')
 
 def get_device():
     # Use GPU if available, otherwise stick with cpu
