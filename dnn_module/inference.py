@@ -45,28 +45,26 @@ def inference(model, testset_loader, threshold):
             if ids_all is not None:
                 ids_all = torch.cat([ids_all, ids], dim=0)
                 output_softmax_all = torch.cat([output_softmax_all, output_softmax], dim=0)
-                # pred_max_all = torch.cat([pred_max_all, pred_max], dim=0)
                 softmax_threshold_all = torch.cat([softmax_threshold_all, softmax_threshold], dim=0)
+                # pred_max_all = torch.cat([pred_max_all, pred_max], dim=0)
             else:
                 ids_all = ids
                 output_softmax_all = output_softmax
-                # pred_max_all = pred_max
                 softmax_threshold_all = softmax_threshold
+                # pred_max_all = pred_max
 
         ids_all = ids_all.detach().cpu().numpy()
         output_softmax_all = output_softmax_all.detach().cpu().numpy()
-        # pred_max_all = pred_max_all.detach().cpu().numpy()
         softmax_threshold_all = softmax_threshold_all.detach().cpu().numpy()
         softmax_threshold_all = np.expand_dims(softmax_threshold_all[:, 1], axis=1)
+        # pred_max_all = pred_max_all.detach().cpu().numpy()
         
         id_output_softmax = np.concatenate((ids_all, output_softmax_all), axis=1)
         np.savetxt('./submit/id_output_softmax.csv', id_output_softmax, delimiter=',', fmt='%0.4f', header='txkey,output')
-        # id_pred_max = np.concatenate((ids_all, pred_max_all), axis=1)
-        # np.savetxt('./submit/id_pred_max.csv', id_pred_max, delimiter=',', fmt='%d', header='txkey,fraud_ind')
-        print(ids_all.shape)
-        print(softmax_threshold_all.shape)
         id_softmax_threshold = np.concatenate((ids_all, softmax_threshold_all), axis=1)
         np.savetxt('./submit/id_softmax_threshold.csv', id_softmax_threshold, delimiter=',', fmt='%d', header='txkey,fraud_ind')
+        # id_pred_max = np.concatenate((ids_all, pred_max_all), axis=1)
+        # np.savetxt('./submit/id_pred_max.csv', id_pred_max, delimiter=',', fmt='%d', header='txkey,fraud_ind')
 
 def get_device():
     # Use GPU if available, otherwise stick with cpu
