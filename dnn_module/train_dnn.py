@@ -75,7 +75,7 @@ def train_save(model, trainset_loader, testset_loader, opt, epoch=5, save_interv
     # optimizer = optim.SGD(model.parameters(), lr=opt.lr, momentum=0.9)
     criterion = FocalLoss(alpha=opt.alpha, gamma=opt.gamma)
     # criterion = nn.CrossEntropyLoss()
-    
+    eval(model, testset_loader, criterion, threshold=opt.threshold, epoch='pre0')
     iteration = 0
     for ep in range(epoch):
         model.train()  # set training mode
