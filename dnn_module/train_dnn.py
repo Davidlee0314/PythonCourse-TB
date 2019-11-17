@@ -16,6 +16,7 @@ from sklearn.metrics import f1_score
 from dataset import Features
 from model import Net, Net1D, Net2D
 from loss import FocalLoss
+from confusion import cm_f1_score
 
 
 def save_checkpoint(checkpoint_path, model, optimizer):
@@ -32,7 +33,7 @@ def load_checkpoint(checkpoint_path, model, optimizer):
     optimizer.load_state_dict(state['optimizer'])
     print('model loaded from %s' % checkpoint_path)
 
-def eval(model, testset_loader, criterion, threshold):
+def eval(model, testset_loader, criterion, threshold, epoch=0):
     print('Start Evaluating ...')
     model.eval()  # Important: set evaluation mode
     softmax = nn.Softmax()
@@ -63,17 +64,18 @@ def eval(model, testset_loader, criterion, threshold):
 
     # 考慮類別的不平衡性，需要計算類別的加權平均 , average='weighted', 'macro'
     f1 = f1_score(labels_all.cpu(), softmax_mask, average='weighted')
+    f1_cm = cm_f1_score(labels_all.cpu().numpy(), softmax_mask.numpy(), file_name='f1_cm_ep{}'.format(epoch))
 
     test_loss /= len(testset_loader.dataset)
-    print('\nEval set: \n\tAverage loss: {:.4f} \n\tAccuracy: {:.0f}% ({}/{}) \n\tF1 Score: {}\n'.format(
-        test_loss, 100. * correct / len(testset_loader.dataset), correct, len(testset_loader.dataset), f1))
+    print('\nEval set: \n\tAverage loss: {:.4f} \n\tAccuracy: {:.0f}% ({}/{}) \n\tF1 Score: {}\n\tF1(cm) Score: {}\n'.format(
+        test_loss, 100. * correct / len(testset_loader.dataset), correct, len(testset_loader.dataset), f1, f1_cm))
 
 def train_save(model, trainset_loader, testset_loader, opt, epoch=5, save_interval=4000, log_interval=100, device='cpu'):
     optimizer = optim.Adam(model.parameters(), lr=opt.lr, betas=(0.9, 0.999))
     # optimizer = optim.SGD(model.parameters(), lr=opt.lr, momentum=0.9)
     criterion = FocalLoss(alpha=opt.alpha, gamma=opt.gamma)
     # criterion = nn.CrossEntropyLoss()
-
+    
     iteration = 0
     for ep in range(epoch):
         model.train()  # set training mode
@@ -93,7 +95,7 @@ def train_save(model, trainset_loader, testset_loader, opt, epoch=5, save_interv
                 save_checkpoint('./models/{}_backup.pth'.format(opt.model_name), model, optimizer)
             iteration += 1
         # save_checkpoint('./models/{}_epoch_{}.pth'.format(opt.model_name, epoch), model, optimizer)
-        eval(model, testset_loader, criterion, threshold=opt.threshold)
+        eval(model, testset_loader, criterion, threshold=opt.threshold, epoch=ep)
     
     # save the final model
     save_checkpoint('./models/{}_final.pth'.format(opt.model_name), model, optimizer)

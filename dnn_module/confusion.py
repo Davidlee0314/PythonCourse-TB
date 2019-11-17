@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd 
 import matplotlib.pyplot as plt 
 import numpy as np 
@@ -10,7 +12,8 @@ import itertools
 def plot_confusion_matrix(cm, classes,
                           normalize=False,
                           title='Confusion matrix',
-                          cmap=plt.cm.Blues):
+                          cmap=plt.cm.Blues,
+                          file_name='file_name'):
     """
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting normalize=True.
@@ -33,7 +36,10 @@ def plot_confusion_matrix(cm, classes,
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
-    plt.show()
+    
+    # plt.show()
+    os.makedirs('./confusion_matrix/')
+    plt.savefig('./confusion_matrix/{}.png'.format(file_name))
 
 def show_data(cm, print_res = 0):
     tp = cm[1,1]
@@ -46,13 +52,19 @@ def show_data(cm, print_res = 0):
         print('Fallout (FPR) = {:.3e}'.format(fp/(fp+tn)))
     return tp/(tp+fp), tp/(tp+fn), fp/(fp+tn)
 
+def cm_f1_score(labels, preds, file_name='file_name'):
+    cm = confusion_matrix(labels, preds)  # labels df
+    plot_confusion_matrix(cm, ['0', '1'], file_name=file_name)
+    pr, tpr, fpr = show_data(cm, print_res = 1)
+    f1 = 2 * (pr * tpr) / (pr + tpr)
+    return f1
 
 if __name__ == '__main__':
-    y_pred = save_y_pred.copy()
+    y_pred = save_y_pred.copy() # df csv output
     thresh = 0.5
     y_pred [y_pred > thresh] = 1
     y_pred [y_pred <= thresh] = 0
-    cm = confusion_matrix(y_train, y_pred)
+    cm = confusion_matrix(y_train, y_pred)  # y_train df
     plot_confusion_matrix(cm, ['0', '1'], )
     pr, tpr, fpr = show_data(cm, print_res = 1)
     print('f1_score: ' + str(2 * (pr * tpr) / (pr + tpr)))
