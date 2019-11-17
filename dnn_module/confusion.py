@@ -38,7 +38,7 @@ def plot_confusion_matrix(cm, classes,
     plt.xlabel('Predicted label')
     
     # plt.show()
-    os.makedirs('./confusion_matrix/')
+    os.makedirs('./confusion_matrix/', exist_ok=True)
     plt.savefig('./confusion_matrix/{}.png'.format(file_name))
 
 def show_data(cm, print_res = 0):
