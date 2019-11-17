@@ -14,7 +14,7 @@ from torch.utils.data import Dataset, DataLoader
 from sklearn.metrics import f1_score
 
 from dataset import Features
-from model import Net
+from model import Net1D
 from loss import FocalLoss
 
 
@@ -140,7 +140,7 @@ if __name__ == '__main__':
     valset_loader = DataLoader(valset, batch_size=opt.valid_size, shuffle=False)
 
     device = get_device()
-    model = Net().to(device) # Remember to move the model to "device"
+    model = Net1D().to(device) # Remember to move the model to "device"
     print(model)
 
     if opt.train_type == 'tune':
