@@ -52,10 +52,10 @@ def inference(model, testset_loader, threshold):
                 pred_max_all = pred_max
                 pred_threshold_all = pred_threshold
 
-        ids_all = ids_all.detach().numpy()
-        pure_output_all = pure_output_all.detach().numpy()
-        pred_max_all = pred_max_all.detach().numpy()
-        pred_threshold_all = pred_threshold_all.detach().numpy()
+        ids_all = ids_all.detach().cpu().numpy()
+        pure_output_all = pure_output_all.detach().cpu().numpy()
+        pred_max_all = pred_max_all.detach().cpu().numpy()
+        pred_threshold_all = pred_threshold_all.detach().cpu().numpy()
         pred_threshold_all = pred_threshold_all[:, 1]
         
         id_output = np.concatenate((ids_all, pure_output_all), axis=1)
