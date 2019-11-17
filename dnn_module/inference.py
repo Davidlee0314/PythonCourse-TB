@@ -83,6 +83,7 @@ def args_parse(a=0, g=1, t=1):
 
     print('\n\n Focal_a{}_g{}_t{}'.format(str(a), str(g), str(t)))
     
+    parser.add_argument("--model_dim", type=str, default='1D', choices=['old','1D', '2D'], help="model choice")
     parser.add_argument('--test_size', type=int, default=1000, help='input test batch size') # 769
     parser.add_argument("--action", type=str, default='load', choices=['load', 'new'], help="action to load or generate new features")
     parser.add_argument("--model_name", type=str, default='Focal_a{}_g{}_t{}'.format(str(a), str(g), str(t)), help="model name for saving pth file")
@@ -111,6 +112,8 @@ if __name__ == '__main__':
         model = Net1D().to(device)
     elif opt.model_dim == '2D':
         model = Net2D().to(device)
+    elif opt.model_dim == 'old':
+        model = Net().to(device)
     load_checkpoint(model_path, model)
     print(model)
 

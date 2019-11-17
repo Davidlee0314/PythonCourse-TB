@@ -23,9 +23,9 @@ class Features(Dataset):
         self.feature_root = './features/'
         os.makedirs(self.feature_root, exist_ok=True)
 
-        self.data_type = data_type
+        self.data_type = data_type      # train / val / test / full_train
         self.model_type = model_type
-        self.dim = dim  # 1D / 2D
+        self.dim = dim  # 1D / 2D / old
         self.dataset = self.get_engineered_data(data_type, action, feature_fname)
         if model_type == 'cnn':
             self.len = self.dataset.shape[0]    # DataFrame
@@ -38,7 +38,7 @@ class Features(Dataset):
             row_feature = self.dataset.iloc[index]
             if self.data_type == 'test':
                 key = 'txkey'
-            elif self.data_type in ['train', 'val']:
+            elif self.data_type in ['train', 'val', 'full_train']:
                 key = 'fraud_ind'
             label_or_id = int(row_feature[key])
             row_feature = row_feature.drop(labels=[key])
@@ -49,11 +49,8 @@ class Features(Dataset):
                 row_feature = torch.cat([row_feature , zero])   # 534 + 42 = (576)
                 row_feature = row_feature.view(24, 24)          # (576) >> (24, 24)
                 row_feature = row_feature.unsqueeze(0)          # (24, 24) >> (1, 24, 24)
-            elif self.dim == '1D':
+            elif self.dim in ['1D', 'old']:
                 pass
-            # print(row_feature.shape)
-            # print('label(train val) or id(test) :', label_or_id)
-            # print('type(label_or_id) :', type(label_or_id))
             return row_feature, label_or_id
         elif self.model_type == 'rnn':
             # TODO : design for LSTM input
@@ -73,7 +70,7 @@ class Features(Dataset):
                 with open(test_feature_path, 'rb') as file:
                     testset = pkl.load(file)
                 print('Test Features loaded (from {})'.format(test_feature_path))
-            elif data_type in ['train', 'val']:
+            elif data_type in ['train', 'val', 'full_train']:
                 if not os.path.exists(feature_path):
                     raise FileNotFoundError('{} not exists, please select another file.'.format(feature_path))
                 with open(feature_path, 'rb') as file:
@@ -137,6 +134,9 @@ class Features(Dataset):
         if data_type == 'test':
             print('testset.shape (after get_dummies / ignore not_train):', testset.shape)
             return testset
+        elif data_type == 'full_train':
+            print('dataset.shape (after get_dummies / ignore not_train):', train_val.shape)
+            return train_val
         elif data_type in ['train', 'val']:
             # split train_set / val_set
             val_set = train_val.iloc[self.VAL_SHAPE:]

@@ -35,6 +35,8 @@ def load_checkpoint(checkpoint_path, model, optimizer):
 def eval(model, testset_loader, criterion, threshold):
     print('Start Evaluating ...')
     model.eval()  # Important: set evaluation mode
+    softmax = nn.Softmax()
+
     test_loss = 0
     correct = 0
     labels_all = None
@@ -54,11 +56,13 @@ def eval(model, testset_loader, criterion, threshold):
                 labels_all = labels
                 output_all = output
 
-    rows = labels_all.shape[0]
-    labels_onehot = torch.zeros(rows, 2).scatter_(1, labels_all, 1)
+    # rows = labels_all.shape[0]
+    # labels_onehot = torch.zeros(rows, 2).scatter_(1, labels_all, 1)
+    softmax_mask = softmax(output_all).cpu() > threshold    # shape[batch, 2]  : 2 value > threshold or not
+    softmax_mask = softmax_mask[:, 1]
+
     # 考慮類別的不平衡性，需要計算類別的加權平均 , average='weighted', 'macro'
-    softmax = nn.Softmax()
-    f1 = f1_score(labels_onehot.cpu(), softmax(output_all).cpu() > threshold, average='weighted')
+    f1 = f1_score(labels_all.cpu(), softmax_mask, average='weighted')
 
     test_loss /= len(testset_loader.dataset)
     print('\nEval set: \n\tAverage loss: {:.4f} \n\tAccuracy: {:.0f}% ({}/{}) \n\tF1 Score: {}\n'.format(
@@ -105,7 +109,8 @@ def get_device():
 def args_parse(a=0, g=0, t=0):
     parser = argparse.ArgumentParser()
     parser.add_argument("--train_type", type=str, default='train', choices=['train', 'tune'], help="action to load or generate new features")
-    parser.add_argument("--model_dim", type=str, default='1D', choices=['1D', '2D'], help="model choice")
+    parser.add_argument("--model_dim", type=str, default='1D', choices=['old','1D', '2D'], help="model choice")
+    parser.add_argument('--full_train', action="store_true", help='trainset use full size or 0.8')
 
     parser.add_argument("--epoch", type=int, default=5, help="number of epoches of training")
     parser.add_argument("--lr", type=float, default=1e-3, help="adam: learning rate")
@@ -131,7 +136,8 @@ if __name__ == '__main__':
     opt = args_parse(a=0, g=0, t=0)
 
     # get dataset 
-    trainset = Features(data_type='train', dim=opt.model_dim, action=opt.action, feature_fname='FeatureOrigin')
+    data_type = 'full_train' if opt.full_train else 'train'
+    trainset = Features(data_type=data_type, dim=opt.model_dim, action=opt.action, feature_fname='FeatureOrigin')
     valset = Features(data_type='val', dim=opt.model_dim, action=opt.action, feature_fname='FeatureOrigin')
     print('rows in trainset:', len(trainset)) # Should print 1217428
     print('rows in valset:', len(valset)) # Should print 304358
@@ -145,6 +151,8 @@ if __name__ == '__main__':
         model = Net1D().to(device)
     elif opt.model_dim == '2D':
         model = Net2D().to(device)
+    elif opt.model_dim == 'old':
+        model = Net().to(device)
     print(model)
 
     if opt.train_type == 'tune':
