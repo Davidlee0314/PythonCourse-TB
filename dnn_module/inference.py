@@ -56,13 +56,15 @@ def inference(model, testset_loader, threshold):
         pure_output_all = pure_output_all.detach().cpu().numpy()
         pred_max_all = pred_max_all.detach().cpu().numpy()
         pred_threshold_all = pred_threshold_all.detach().cpu().numpy()
-        pred_threshold_all = pred_threshold_all[:, 1]
+        pred_threshold_all = np.expand_dims(pred_threshold_all[:, 1], axis=1)
         
         id_output = np.concatenate((ids_all, pure_output_all), axis=1)
-        id_pred_max = np.concatenate((ids_all, pred_max_all), axis=1)
-        id_pred_threshold = np.concatenate((ids_all, pred_threshold_all), axis=1)
         np.savetxt('./submit/id_pure_output.csv', id_output, delimiter=',', fmt='%0.4f', header='txkey,output')
+        id_pred_max = np.concatenate((ids_all, pred_max_all), axis=1)
         np.savetxt('./submit/id_pred_max.csv', id_pred_max, delimiter=',', fmt='%d', header='txkey,fraud_ind')
+        print(ids_all.shape)
+        print(pred_threshold_all.shape)
+        id_pred_threshold = np.concatenate((ids_all, pred_threshold_all), axis=1)
         np.savetxt('./submit/id_pred_softmax_threshold.csv', id_pred_threshold, delimiter=',', fmt='%d', header='txkey,fraud_ind')
 
 def get_device():
