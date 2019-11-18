@@ -90,22 +90,32 @@ class Net2D(nn.Module):
     def __init__(self):
         super(Net2D, self).__init__()
         self.conv1 = nn.Sequential(
-            nn.Conv2d(1, 10, kernel_size=5, padding=1),
-            nn.MaxPool2d(2),
+            nn.Conv2d(1, 4, kernel_size=9, padding=1),
+            nn.BatchNorm2d(4),
+            # nn.MaxPool2d(2),
             nn.ReLU()
         )
         self.conv2 = nn.Sequential(
-            nn.Conv2d(10, 20, kernel_size=5, padding=1),
-            nn.Dropout2d(0.5),
+            nn.Conv2d(4, 8, kernel_size=9, padding=1),
+            nn.BatchNorm2d(8),
+            # nn.MaxPool2d(2),
+            nn.ReLU(),
+            nn.Dropout2d(0.5)
+        )
+        self.conv3 = nn.Sequential(
+            nn.Conv2d(8, 16, kernel_size=9, padding=1),
+            nn.BatchNorm2d(16),
+            # nn.Dropout2d(0.5),
             nn.MaxPool2d(2),
             nn.ReLU()
         )
         self.fc1 = nn.Sequential(
-            nn.Linear(320, 50),
+            nn.Linear(16*9, 32),
+            nn.BatchNorm1d(32),
             nn.ReLU(),
-            nn.Dropout(0.5)
+            # nn.Dropout(0.5)
         )
-        self.fc2 = nn.Linear(50, 2)
+        self.fc2 = nn.Linear(32, 2)
 
     def forward(self, x):
         # print('input x.shape :', x.shape)
@@ -116,7 +126,10 @@ class Net2D(nn.Module):
         x = self.conv2(x)
         # print('conv2 x.shape :', x.shape)
         
-        x = x.view(-1, 320)
+        x = self.conv3(x)
+        # print('conv3 x.shape :', x.shape)
+        
+        x = x.view(-1, 16*9)
         # print('view x.shape :', x.shape)
 
         x = self.fc1(x)
