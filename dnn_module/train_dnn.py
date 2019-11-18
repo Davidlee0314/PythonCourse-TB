@@ -121,7 +121,7 @@ def args_parse(a=0, g=0, t=0):
 
     alpha_list = [0.25, 0.5, 0.75]          # 3
     gamma_list = [0.5, 1, 2, 5]             # 4
-    threshold_list = [0.15, 0.248, 0.4]     # 3
+    threshold_list = [0.15, 0.248, 0.4, 0.1]     # 3
 
     parser.add_argument("--action", type=str, default='load', choices=['load', 'new', 'sample'], help="action to load or generate new features")
     parser.add_argument("--model_name", type=str, default='Focal_a{}_g{}_t{}'.format(str(a), str(g), str(t)), help="model name for saving pth file")

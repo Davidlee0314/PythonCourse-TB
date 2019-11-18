@@ -108,22 +108,22 @@ class Net2D(nn.Module):
         self.fc2 = nn.Linear(50, 2)
 
     def forward(self, x):
-        # print('input x.shape :', x.shape)
+        print('input x.shape :', x.shape)
 
         x = self.conv1(x)
-        # print('conv1 x.shape :', x.shape)
+        print('conv1 x.shape :', x.shape)
 
         x = self.conv2(x)
-        # print('conv2 x.shape :', x.shape)
+        print('conv2 x.shape :', x.shape)
         
         x = x.view(-1, 320)
-        # print('view x.shape :', x.shape)
+        print('view x.shape :', x.shape)
 
         x = self.fc1(x)
-        # print('fc1 x.shape :', x.shape)
+        print('fc1 x.shape :', x.shape)
 
         x = self.fc2(x)
-        # print('fc2 x.shape :', x.shape)
+        print('fc2 x.shape :', x.shape)
 
         # soft max   >>  CE loss 自動轉 target 成為 one hot ，因此不需要 softmax 
 
@@ -145,6 +145,13 @@ if __name__ == "__main__":
     # print(combine)
 
     output = model2D(combine)
+    print(output.shape)
+    print(output)
+
+    softmax = nn.Softmax()
+    sm = softmax(output)
+    print(sm.shape)
+    print(sm)
     
     # output = model(x)
     # pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
