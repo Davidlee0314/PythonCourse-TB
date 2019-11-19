@@ -50,9 +50,13 @@ def show_data(cm, print_res = 0):
     fp = cm[0,1]
     tn = cm[0,0]
     if print_res == 1:
-        print('Precision =     {:.3f}'.format(tp/(tp+fp)))
-        print('Recall (TPR) =  {:.3f}'.format(tp/(tp+fn)))
-        print('Fallout (FPR) = {:.3e}'.format(fp/(fp+tn)))
+        print('\tPrecision =     {:.3f}'.format(tp/(tp+fp)))
+        print('\tRecall (TPR) =  {:.3f}'.format(tp/(tp+fn)))
+        print('\tFallout (FPR) = {:.3e}'.format(fp/(fp+tn)))
+        print('\tTrue Positive = {:.2f}'.format(tp))
+        print('\tTrue Negative = {:.2f}'.format(tn))
+        print('\tFalse Positive = {:.2f}'.format(fp))
+        print('\tFalse Negative = {:.2f}'.format(fn))
     return tp/(tp+fp), tp/(tp+fn), fp/(fp+tn)
 
 def cm_f1_score(labels, preds, file_name='file_name'):
