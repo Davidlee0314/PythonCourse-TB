@@ -62,14 +62,15 @@ def eval(model, testset_loader, criterion, threshold, epoch=0):
     softmax_mask = softmax(output_all).cpu() > threshold    # shape[batch, 2]  : 2 value > threshold or not
     softmax_mask = softmax_mask[:, 1]
 
-    # 考慮類別的不平衡性，需要計算類別的加權平均 , average='weighted', 'macro'
     print('\n\nEval set:')
-    f1 = f1_score(labels_all.cpu(), softmax_mask, average='weighted')
+    # 考慮類別的不平衡性，需要計算類別的加權平均 , average='weighted', 'macro'
+    # f1 = f1_score(labels_all.cpu(), softmax_mask, average='weighted')
     f1_cm = cm_f1_score(labels_all.cpu().numpy(), softmax_mask.numpy(), file_name='f1_cm_ep{}'.format(epoch))
+    print('\tF1 score (cm) = {}'.format(f1_cm))
 
-    test_loss /= len(testset_loader.dataset)
-    print('\n\tAverage loss: {:.4f} \n\tAccuracy: {:.0f}% ({}/{}) \n\tF1 Score: {}\n\tF1(cm) Score: {}\n'.format(
-        test_loss, 100. * correct / len(testset_loader.dataset), correct, len(testset_loader.dataset), f1, f1_cm))
+    # test_loss /= len(testset_loader.dataset)
+    # print('\n\tAverage loss: {:.4f} \n\tAccuracy: {:.0f}% ({}/{}) \n\tF1 Score: {}\n\tF1(cm) Score: {}\n'.format(
+    #     test_loss, 100. * correct / len(testset_loader.dataset), correct, len(testset_loader.dataset), f1, f1_cm))
 
 def train_save(model, trainset_loader, testset_loader, opt, epoch=5, save_interval=4000, log_interval=100, device='cpu'):
     optimizer = optim.Adam(model.parameters(), lr=opt.lr, betas=(0.9, 0.999))
