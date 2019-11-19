@@ -14,7 +14,7 @@ from torch.utils.data import Dataset, DataLoader
 from sklearn.metrics import f1_score
 
 from dataset import Features
-from model import Net, Net1D, Net2D
+from model import Net, Net1D, Net2D, Net2D_2
 from loss import FocalLoss
 
 
@@ -111,7 +111,7 @@ if __name__ == '__main__':
     if opt.model_dim == '1D':
         model = Net1D().to(device)
     elif opt.model_dim == '2D':
-        model = Net2D().to(device)
+        model = Net2D_2().to(device)
     elif opt.model_dim == 'old':
         model = Net().to(device)
     load_checkpoint(model_path, model)

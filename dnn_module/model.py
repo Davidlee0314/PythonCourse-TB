@@ -142,9 +142,67 @@ class Net2D(nn.Module):
 
         return x
 
+
+class Net2D_2(nn.Module):
+    def __init__(self):
+        super(Net2D_2, self).__init__()
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(1, 8, kernel_size=21, padding=3),
+            nn.BatchNorm2d(8),
+            # nn.MaxPool2d(2),
+            nn.ReLU()
+        )
+        self.conv2 = nn.Sequential(
+            nn.Conv2d(8, 16, kernel_size=9, padding=3),
+            nn.BatchNorm2d(16),
+            # nn.MaxPool2d(2),
+            nn.ReLU(),
+            nn.Dropout2d(0.3)
+        )
+        self.conv3 = nn.Sequential(
+            nn.Conv2d(16, 16, kernel_size=7, padding=1),
+            nn.BatchNorm2d(16),
+            # nn.MaxPool2d(2),
+            nn.ReLU(),
+            nn.Dropout2d(0.3)
+        )
+        self.fc1 = nn.Sequential(
+            nn.Linear(16*16, 32),
+            nn.BatchNorm1d(32),
+            nn.ReLU(),
+            # nn.Dropout(0.5)
+        )
+        self.fc2 = nn.Linear(32, 2)
+
+    def forward(self, x):
+        print('input x.shape :', x.shape)
+
+        x = self.conv1(x)
+        print('conv1 x.shape :', x.shape)
+
+        x = self.conv2(x)
+        print('conv2 x.shape :', x.shape)
+        
+        x = self.conv3(x)
+        print('conv3 x.shape :', x.shape)
+        
+        x = x.view(-1, 16*16)
+        print('view x.shape :', x.shape)
+
+        x = self.fc1(x)
+        print('fc1 x.shape :', x.shape)
+
+        x = self.fc2(x)
+        print('fc2 x.shape :', x.shape)
+
+        # soft max   >>  CE loss 自動轉 target 成為 one hot ，因此不需要 softmax 
+
+        return x
+
+
 if __name__ == "__main__":
     # model = Net()
-    model2D = Net2D()
+    model2D = Net2D_2()
 
     combine = torch.Tensor(4, 576).uniform_(0, 1)
     # x = torch.Tensor(534).uniform_(0, 1)
