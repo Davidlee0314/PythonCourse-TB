@@ -49,14 +49,20 @@ def show_data(cm, print_res = 0):
     fn = cm[1,0]
     fp = cm[0,1]
     tn = cm[0,0]
+    total = tp + fn + fp + tn
     if print_res == 1:
-        print('\tPrecision =     {:.3f}'.format(tp/(tp+fp)))
-        print('\tRecall (TPR) =  {:.3f}'.format(tp/(tp+fn)))
-        print('\tFallout (FPR) = {:.3e}'.format(fp/(fp+tn)))
-        print('\tTrue Positive = {:.2f}'.format(tp))
-        print('\tTrue Negative = {:.2f}'.format(tn))
-        print('\tFalse Positive = {:.2f}'.format(fp))
-        print('\tFalse Negative = {:.2f}'.format(fn))
+        print('\tPrecision     = {:.3f} ({} "Pred 1  " / {} "Actual 1")'.format(tp/(tp+fp), tp, tp+fp))
+        print('\tRecall (TPR)  = {:.3f} ({} "Actual 1" / {} "Pred   1")'.format(tp/(tp+fn), tp, tp+fn))
+        print('\tFallout (FPR) = {:.3f} ({} / {})'.format(fp/(fp+tn), fp, fp+tn))
+        print('')
+        print('\tTrue Positive  = {}'.format(tp))
+        print('\tTrue Negative  = {}'.format(tn))
+        print('\tFalse Positive = {}'.format(fp))
+        print('\tFalse Negative = {}'.format(fn))
+        print('')
+        print('\tPredict Negative (0) = {:.3f} ({} / {})'.format( (tn+fn)/total, tn+fn, total ))
+        print('\tPredict Positive (1) = {:.3f} ({} / {})'.format( (tp+fp)/total, tp+fp, total ))
+        print('\tAccuracy             = {:.3f} ({} "Pred correct"/ {} "Total")'.format( (tp+tn)/total, tp+tn, total ))
     return tp/(tp+fp), tp/(tp+fn), fp/(fp+tn)
 
 def cm_f1_score(labels, preds, file_name='file_name'):
