@@ -40,6 +40,9 @@ def plot_confusion_matrix(cm, classes,
     # plt.show()
     os.makedirs('./confusion_matrix/', exist_ok=True)
     plt.savefig('./confusion_matrix/{}.png'.format(file_name))
+    plt.cla()
+    plt.clf()
+    plt.close()
 
 def show_data(cm, print_res = 0):
     tp = cm[1,1]
