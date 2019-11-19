@@ -175,25 +175,25 @@ class Net2D_2(nn.Module):
         self.fc2 = nn.Linear(32, 2)
 
     def forward(self, x):
-        print('input x.shape :', x.shape)
+        # print('input x.shape :', x.shape)
 
         x = self.conv1(x)
-        print('conv1 x.shape :', x.shape)
+        # print('conv1 x.shape :', x.shape)
 
         x = self.conv2(x)
-        print('conv2 x.shape :', x.shape)
+        # print('conv2 x.shape :', x.shape)
         
         x = self.conv3(x)
-        print('conv3 x.shape :', x.shape)
+        # print('conv3 x.shape :', x.shape)
         
         x = x.view(-1, 16*16)
-        print('view x.shape :', x.shape)
+        # print('view x.shape :', x.shape)
 
         x = self.fc1(x)
-        print('fc1 x.shape :', x.shape)
+        # print('fc1 x.shape :', x.shape)
 
         x = self.fc2(x)
-        print('fc2 x.shape :', x.shape)
+        # print('fc2 x.shape :', x.shape)
 
         # soft max   >>  CE loss 自動轉 target 成為 one hot ，因此不需要 softmax 
 
