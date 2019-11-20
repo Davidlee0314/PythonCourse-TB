@@ -18,12 +18,11 @@ def test_threshold(infer_val_path = './test.pkl'):
         infer_val_df['threshold_{}'.format(str(threshold)[2:6])] = infer_val_df['threshold_{}'.format(str(threshold)[2:6])].astype(int)
         f1 = cm_f1_score(infer_val_df['label'], infer_val_df['threshold_{}'.format(str(threshold)[2:6])], verbose=False)
         threshold_f1_dict['threshold_{}'.format(str(threshold)[2:6])] = f1
-    
     for ind, val in threshold_f1_dict.items():
         print('{} : f1 = {}'.format(ind, val))
-    max_key = max(threshold_f1_dict)
-    max_f1 = threshold_f1_dict[max_key]
-    print('Max f1 score = {}   (when {})'.format(max_f1, max_key))
+    max_f1 = max(threshold_f1_dict.values())
+    max_key = list(threshold_f1_dict.keys())[list(threshold_f1_dict.values()).index(m)]
+    print('\nMax f1 score = {}   (when {})\n'.format(max_f1, max_key))
 
 def args_parse():
     parser = argparse.ArgumentParser()
@@ -35,5 +34,8 @@ def args_parse():
 
 
 if __name__ == "__main__":
-    opt = args_parse()
-    test_threshold(opt.infer_val_path)
+    # opt = args_parse()
+    # test_threshold(opt.infer_val_path)
+
+    m = max(a.values())
+    k = list(a.keys())[list(a.values()).index(m)]
