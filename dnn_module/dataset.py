@@ -13,7 +13,7 @@ from Utils.Feature import FeatureEngineer
 from Utils import read_data
 
 class Features(Dataset):
-    def __init__(self, dim='1D', data_type='train', model_type='cnn', action='new', feature_fname='FeatureOrigin', infer_val=False):
+    def __init__(self, dim='1D', data_type='train', model_type='cnn', action='new', feature_fname='FeatureOrigin'):
         """ Intialize the dataset """
         self.TRAIN_SHAPE = 1521787
         self.VAL_SHAPE = int(1521787 * 0.8)
@@ -24,10 +24,9 @@ class Features(Dataset):
         self.feature_root = './features/'
         os.makedirs(self.feature_root, exist_ok=True)
 
-        self.data_type = data_type      # train / val / infer / full_train
+        self.data_type = data_type      # train / val / infer / full_train / infer_val
         self.model_type = model_type
         self.dim = dim  # 1D / 2D / old
-        self.infer_val = infer_val          # val set, but need id to check
         self.dataset = self.get_engineered_data(data_type, action, feature_fname)
         if model_type == 'cnn':
             self.len = self.dataset.shape[0]    # DataFrame
@@ -38,25 +37,37 @@ class Features(Dataset):
         """ Get a sample from the dataset """
         if self.model_type == 'cnn':
             row_feature = self.dataset.iloc[index]  # df 出來變成 series
-            if self.data_type == 'infer':
-                key = 'txkey'
-            if (self.data_type in ['train', 'val', 'full_train']) or (self.infer_val):
-                key = 'fraud_ind'
-            id = int(row_feature['txkey'])
-            label_or_id = int(row_feature[key])
-            row_feature = row_feature.drop(labels=[key])    # 1 維度 series，因此 不用 axis=1
-            label_or_id = torch.tensor([label_or_id])
+            
+            if self.data_type == 'infer_val':
+                id = int(row_feature['txkey'])
+                id = torch.tensor([id])
+                label = int(row_feature['fraud_ind'])
+                label = torch.tensor([label])
+                row_feature = row_feature.drop(labels=['fraud_ind'])
+                row_feature = row_feature.drop(labels=['txkey'])    # 讀進來時，有 fraud_ind 也有 txkey
+            elif self.data_type == 'infer':
+                id = int(row_feature['txkey'])
+                id = torch.tensor([id])
+                row_feature = row_feature.drop(labels=['txkey'])    # 讀進來時，本來就沒 fraud_ind，不須再 drop
+            elif self.data_type in ['train', 'val', 'full_train']:
+                label = int(row_feature['fraud_ind'])
+                label = torch.tensor([label])
+                row_feature = row_feature.drop(labels=['fraud_ind']) # 讀進來時，本來就沒 txkey，不須再 drop
+
             row_feature = torch.tensor(list(row_feature))
             if self.dim == '2D':
                 zero = torch.zeros(42)
                 row_feature = torch.cat([row_feature , zero])   # 534 + 42 = (576)
                 row_feature = row_feature.view(24, 24)          # (576) >> (24, 24)
                 row_feature = row_feature.unsqueeze(0)          # (24, 24) >> (1, 24, 24)
-            if self.infer_val:    # val set, but need id to check
-                label = label_or_id
-                id = torch.tensor([id])
+
+            if self.data_type == 'infer_val':    # val set, but need id to check
                 return row_feature, id, label
-            return row_feature, label_or_id
+            elif self.data_type == 'infer':
+                return row_feature, id
+            elif self.data_type in ['train', 'val', 'full_train']:
+                return row_feature, label
+
         elif self.model_type == 'rnn':
             # TODO : design for LSTM input
             pass
@@ -78,7 +89,7 @@ class Features(Dataset):
                     with open(test_feature_path, 'rb') as file:
                         testset = pkl.load(file)
                     print('Test Features loaded (from {})'.format(test_feature_path))
-            if (data_type in ['train', 'val', 'full_train']) or (self.infer_val):
+            if data_type in ['train', 'val', 'full_train', 'infer_val']:
                 if not os.path.exists(feature_path):
                     raise FileNotFoundError('{} not exists, please select another file.'.format(feature_path))
                 with open(feature_path, 'rb') as file:
@@ -138,17 +149,17 @@ class Features(Dataset):
             with open(feature_path, 'wb') as file:
                 pkl.dump(train_val, file)
             
-        # train / val / infer
-        if data_type == 'infer':
-            if self.infer_val:
-                val_set = train_val.iloc[self.VAL_SHAPE:]
-                print('val_set(for inference)  shape = ', val_set.shape, '\n')
-                del train_val
-                gc.collect()
-                return val_set
-            else:
-                print('testset.shape (after get_dummies / ignore not_train):', testset.shape)
-                return testset
+        # train / val / infer / infer_val
+        if data_type == 'infer_val':
+            val_set = train_val.iloc[self.VAL_SHAPE:]
+            # __getitem__() 需要用到 txkey / fraud_ind 故先不能 drop
+            print('val_set(for inference)  shape = ', val_set.shape, '\n')
+            del train_val
+            gc.collect()
+            return val_set            
+        elif data_type == 'infer':
+            print('testset.shape (after get_dummies / ignore not_train):', testset.shape)
+            return testset
         elif data_type == 'full_train':
             train_val = train_val.drop(labels=['txkey'], axis=1)
             print('dataset.shape (after get_dummies / ignore not_train):', train_val.shape)

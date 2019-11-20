@@ -113,7 +113,8 @@ if __name__ == '__main__':
     model_path = os.path.join('.', 'models', '{}_final.pth'.format(opt.model_name))
 
     # get dataset 
-    testset = Features(data_type='infer', dim=opt.model_dim, action=opt.action, feature_fname='FeatureOrigin', infer_val=opt.infer_val)
+    data_type = 'infer_val' if opt.infer_val else 'infer'
+    testset = Features(data_type=data_type, dim=opt.model_dim, action=opt.action, feature_fname='FeatureOrigin')
     print('rows in testset:', len(testset)) # Should print 1217428
 
     # Use the torch dataloader to iterate through the dataset
