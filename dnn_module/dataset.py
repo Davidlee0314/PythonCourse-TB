@@ -37,14 +37,14 @@ class Features(Dataset):
     def __getitem__(self, index):
         """ Get a sample from the dataset """
         if self.model_type == 'cnn':
-            row_feature = self.dataset.iloc[index]
+            row_feature = self.dataset.iloc[index]  # df 出來變成 series
             if self.data_type == 'infer':
                 key = 'txkey'
             if (self.data_type in ['train', 'val', 'full_train']) or (self.infer_val):
                 key = 'fraud_ind'
             id = int(row_feature['txkey'])
             label_or_id = int(row_feature[key])
-            row_feature = row_feature.drop(labels=[key], axis=1)
+            row_feature = row_feature.drop(labels=[key])    # 1 維度 series，因此 不用 axis=1
             label_or_id = torch.tensor([label_or_id])
             row_feature = torch.tensor(list(row_feature))
             if self.dim == '2D':
