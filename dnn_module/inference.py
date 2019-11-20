@@ -1,3 +1,11 @@
+'''
+Usage Example :
+    (infer on valset for 8:2)
+    python3.7 inference.py Net1D_2_Focal_a075_g3_t015_b2048_ep8 0.15 --infer_val
+Usage Example :
+    (normal infer on testset)
+    python3.7 inference.py Net1D_2_Focal_a075_g3_t015_b2048_ep8 0.15
+'''
 import gc
 import os
 import argparse

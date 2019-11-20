@@ -82,14 +82,11 @@ class Features(Dataset):
         test_feature_path = os.path.join(self.feature_root, feature_fname+'_test.pkl')
         if action == 'load':
             if data_type == 'infer':
-                if self.infer_val:
-                    pass
-                else:
-                    if not os.path.exists(test_feature_path):
-                        raise FileNotFoundError('{} not exists, please select another file.'.format(test_feature_path))
-                    with open(test_feature_path, 'rb') as file:
-                        testset = pkl.load(file)
-                    print('Test Features loaded (from {})'.format(test_feature_path))
+                if not os.path.exists(test_feature_path):
+                    raise FileNotFoundError('{} not exists, please select another file.'.format(test_feature_path))
+                with open(test_feature_path, 'rb') as file:
+                    testset = pkl.load(file)
+                print('Test Features loaded (from {})'.format(test_feature_path))
             if data_type in ['train', 'val', 'full_train', 'infer_val']:
                 if not os.path.exists(feature_path):
                     raise FileNotFoundError('{} not exists, please select another file.'.format(feature_path))

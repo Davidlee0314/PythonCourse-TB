@@ -1,3 +1,7 @@
+'''
+Usage Example : 
+    python3.7 test_threshold.py -p ./infer_val/InferVal_Net1D_2_Focal_a075_g3_t015_b2048_ep8.pkl 
+'''
 import argparse
 
 import pickle as pkl
