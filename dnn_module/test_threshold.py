@@ -9,16 +9,15 @@ def test_threshold(infer_val_path = './test.pkl'):
         infer_val_df = pkl.load(file)
 
     print(infer_val_df.head())
-    
+
     threshold_list = [ 0.05 + 0.025 * x for x in range(0, 15)]
     threshold_f1_dict = {}
     for threshold in threshold_list:
         # print('threshold_{}'.format(str(threshold)[2:6]))
-        infer_val_df['threshold_{}'.format(str(threshold)[2:6])] = infer_val_df['pred_softax'] > threshold
+        infer_val_df['threshold_{}'.format(str(threshold)[2:6])] = infer_val_df['pred_softmax'] > threshold
         infer_val_df['threshold_{}'.format(str(threshold)[2:6])] = infer_val_df['threshold_{}'.format(str(threshold)[2:6])].astype(int)
         f1 = cm_f1_score(infer_val_df['label'], infer_val_df['threshold_{}'.format(str(threshold)[2:6])], verbose=False)
         threshold_f1_dict['threshold_{}'.format(str(threshold)[2:6])] = f1
-    # print(infer_val_df)
     
     for ind, val in threshold_f1_dict.items():
         print('{} : f1 = {}'.format(ind, val))

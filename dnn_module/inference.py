@@ -69,12 +69,12 @@ def inference(model, testset_loader, opt, threshold):
             labels_all = labels_all.detach().cpu().numpy()
             output_softmax_all = np.expand_dims(output_softmax_all[:, 1], axis=1)
             output_infer_val = np.concatenate((ids_all, output_softmax_all, labels_all), axis=1)
-            df = pd.DataFrame(output_infer_val)
-            df.columns = ['txkey', 'pred_softax', 'label']
-            df.txkey = df.txkey.astype(int)
-            df.label = df.label.astype(int)
+            df_output_infer_val = pd.DataFrame(output_infer_val)
+            df_output_infer_val.columns = ['txkey', 'pred_softmax', 'label']
+            df_output_infer_val.txkey = df_output_infer_val.txkey.astype(int)
+            df_output_infer_val.label = df_output_infer_val.label.astype(int)
             with open('./infer_val/InferVal_{}.pkl'.format(opt.model_name), 'wb') as file:
-                pkl.dump(output_infer_val, file)
+                pkl.dump(df_output_infer_val, file)
         else:
             softmax_threshold_all = softmax_threshold_all.detach().cpu().numpy()
             softmax_threshold_all = np.expand_dims(softmax_threshold_all[:, 1], axis=1)
