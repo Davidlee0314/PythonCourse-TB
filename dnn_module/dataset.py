@@ -5,6 +5,7 @@ sys.path.append('..')
 
 import pickle as pkl
 import pandas as pd
+import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
 
@@ -12,7 +13,7 @@ from Utils.Feature import FeatureEngineer
 from Utils import read_data
 
 class Features(Dataset):
-    def __init__(self, dim='1D', data_type='train', model_type='cnn', action='new', feature_fname='FeatureOrigin'):
+    def __init__(self, dim='1D', data_type='train', model_type='cnn', action='new', feature_fname='FeatureOrigin', infer_val=False):
         """ Intialize the dataset """
         self.TRAIN_SHAPE = 1521787
         self.VAL_SHAPE = int(1521787 * 0.8)
@@ -23,9 +24,10 @@ class Features(Dataset):
         self.feature_root = './features/'
         os.makedirs(self.feature_root, exist_ok=True)
 
-        self.data_type = data_type      # train / val / test / full_train
+        self.data_type = data_type      # train / val / infer / full_train
         self.model_type = model_type
         self.dim = dim  # 1D / 2D / old
+        self.infer_val = infer_val          # val set, but need id to check
         self.dataset = self.get_engineered_data(data_type, action, feature_fname)
         if model_type == 'cnn':
             self.len = self.dataset.shape[0]    # DataFrame
@@ -36,7 +38,7 @@ class Features(Dataset):
         """ Get a sample from the dataset """
         if self.model_type == 'cnn':
             row_feature = self.dataset.iloc[index]
-            if self.data_type == 'test':
+            if self.data_type == 'infer':
                 key = 'txkey'
             elif self.data_type in ['train', 'val', 'full_train']:
                 key = 'fraud_ind'
@@ -49,8 +51,10 @@ class Features(Dataset):
                 row_feature = torch.cat([row_feature , zero])   # 534 + 42 = (576)
                 row_feature = row_feature.view(24, 24)          # (576) >> (24, 24)
                 row_feature = row_feature.unsqueeze(0)          # (24, 24) >> (1, 24, 24)
-            elif self.dim in ['1D', 'old']:
-                pass
+            if self.infer_val:    # val set, but need id to check
+                id = int(row_feature['txkey'])
+                label = label_or_id
+                return row_feature, id, label
             return row_feature, label_or_id
         elif self.model_type == 'rnn':
             # TODO : design for LSTM input
@@ -64,13 +68,16 @@ class Features(Dataset):
         feature_path = os.path.join(self.feature_root, feature_fname+'.pkl')
         test_feature_path = os.path.join(self.feature_root, feature_fname+'_test.pkl')
         if action == 'load':
-            if data_type == 'test':
-                if not os.path.exists(test_feature_path):
-                    raise FileNotFoundError('{} not exists, please select another file.'.format(test_feature_path))
-                with open(test_feature_path, 'rb') as file:
-                    testset = pkl.load(file)
-                print('Test Features loaded (from {})'.format(test_feature_path))
-            elif data_type in ['train', 'val', 'full_train']:
+            if data_type == 'infer':
+                if self.infer_val:
+                    pass
+                else:
+                    if not os.path.exists(test_feature_path):
+                        raise FileNotFoundError('{} not exists, please select another file.'.format(test_feature_path))
+                    with open(test_feature_path, 'rb') as file:
+                        testset = pkl.load(file)
+                    print('Test Features loaded (from {})'.format(test_feature_path))
+            elif data_type in ['train', 'val', 'full_train'] or self.infer_val:
                 if not os.path.exists(feature_path):
                     raise FileNotFoundError('{} not exists, please select another file.'.format(feature_path))
                 with open(feature_path, 'rb') as file:
@@ -130,31 +137,33 @@ class Features(Dataset):
             with open(feature_path, 'wb') as file:
                 pkl.dump(train_val, file)
             
-        # train / val / test
-        if data_type == 'test':
-            print('testset.shape (after get_dummies / ignore not_train):', testset.shape)
-            return testset
+        # train / val / infer
+        if data_type == 'infer':
+            if self.infer_val:
+                val_set = train_val.iloc[self.VAL_SHAPE:]
+                print('val_set(for inference)  shape = ', val_set.shape, '\n')
+                del train_val
+                gc.collect()
+                return val_set
+            else:
+                print('testset.shape (after get_dummies / ignore not_train):', testset.shape)
+                return testset
         elif data_type == 'full_train':
             print('dataset.shape (after get_dummies / ignore not_train):', train_val.shape)
             return train_val
         elif data_type in ['train', 'val']:
             # split train_set / val_set
-            val_set = train_val.iloc[self.VAL_SHAPE:]
-            train_set = train_val.iloc[:self.VAL_SHAPE - 1]
             print('dataset.shape (after get_dummies / ignore not_train):', train_val.shape)
-            print('train_set shape = ', train_set.shape)
-            print('val_set shape = ', val_set.shape, '\n')
-            del train_val
-            gc.collect()
-
             if data_type == 'train':
-                del val_set
-                gc.collect()
+                train_set = train_val.iloc[:self.VAL_SHAPE - 1]
+                print('train_set shape = ', train_set.shape)
                 output_set = train_set
             elif data_type == 'val':
-                del train_set
-                gc.collect()
+                val_set = train_val.iloc[self.VAL_SHAPE:]
+                print('val_set shape = ', val_set.shape, '\n')
                 output_set = val_set
+            del train_val
+            gc.collect()
 
             if self.model_type == 'cnn':
                 return output_set    # DataFrame
@@ -166,14 +175,59 @@ class Features(Dataset):
                 return SubDFList    # list of DataFrames
 
 if __name__ == '__main__':
-    trainset = Features(data_type='train', action='load', feature_fname='FeatureOrigin')
-    print('rows in trainset:', len(trainset)) # Should print 60000
+    # trainset = Features(data_type='train', action='load', feature_fname='FeatureOrigin')
+    # print('rows in trainset:', len(trainset)) # Should print 60000
 
-    # Use the torch dataloader to iterate through the dataset
-    trainset_loader = DataLoader(trainset, batch_size=4, shuffle=True)
+    # # Use the torch dataloader to iterate through the dataset
+    # trainset_loader = DataLoader(trainset, batch_size=4, shuffle=True)
 
-    # get some random training samples
-    dataiter = iter(trainset_loader)
-    features, labels = dataiter.next()
-    print('Feature tensor in each batch:', features.shape, features.dtype)
-    print('Label tensor in each batch:', labels.shape, labels.dtype)
+    # # get some random training samples
+    # dataiter = iter(trainset_loader)
+    # features, labels = dataiter.next()
+    # print('Feature tensor in each batch:', features.shape, features.dtype)
+    # print('Label tensor in each batch:', labels.shape, labels.dtype)
+
+
+
+
+    ### testing
+    
+    sm = torch.Tensor(8, 2).uniform_(0, 1)
+    print(sm.shape)
+    sm = sm[:, 1]
+    print(sm.shape)
+    sm = np.expand_dims(sm.numpy(), axis=1)
+    print(sm.shape, '\n============================softmax shape over')
+
+
+    label = torch.Tensor(8, 1).uniform_(0, 1)
+    id = torch.Tensor(8, 1).uniform_(0, 100)
+
+    print(id.shape)
+    print(label.shape)
+
+    # out = torch.stack([id.squeeze(), sm, label.squeeze()], dim=1)ㄥ
+    output_infer_val = np.concatenate((id, sm, label), axis=1)
+    print(output_infer_val.shape)
+    print(output_infer_val)
+    df = pd.DataFrame(output_infer_val)
+    df.columns = ['txkey', 'pred_softax', 'label']
+    df.txkey = df.txkey.astype(int)
+    df.label = df.label.astype(int)
+
+    val_softmax_path = './test.pkl'
+
+
+    with open(val_softmax_path, 'wb') as file:
+        pkl.dump(df, file)
+
+
+    print(df.shape)
+    print(df)
+    # print(out.shape)
+    # df = pd.DataFrame(out.numpy())
+    # df.columns = ['txkey', 'pred_softax', 'label']
+    # print(df.shape)
+    # print(df)
+
+

@@ -72,12 +72,14 @@ def eval(model, testset_loader, criterion, threshold, epoch=0):
     # print('\n\tAverage loss: {:.4f} \n\tAccuracy: {:.0f}% ({}/{}) \n\tF1 Score: {}\n\tF1(cm) Score: {}\n'.format(
     #     test_loss, 100. * correct / len(testset_loader.dataset), correct, len(testset_loader.dataset), f1, f1_cm))
 
-def train_save(model, trainset_loader, testset_loader, opt, epoch=5, save_interval=4000, log_interval=100, device='cpu'):
+def train_save(model, trainset_loader, testset_loader, opt, epoch=5, save_interval=4000, log_interval=100, device='cpu', save_ep=False):
+    os.makedirs('./models/', exist_ok=True)
+    os.makedirs('./models/{}/'.format(opt.model_name), exist_ok=True)
     optimizer = optim.Adam(model.parameters(), lr=opt.lr, betas=(0.9, 0.999))
     # optimizer = optim.SGD(model.parameters(), lr=opt.lr, momentum=0.9)
     criterion = FocalLoss(alpha=opt.alpha, gamma=opt.gamma)
     # criterion = nn.CrossEntropyLoss()
-    
+
     iteration = 0
     for ep in range(epoch):
         model.train()  # set training mode
@@ -94,13 +96,14 @@ def train_save(model, trainset_loader, testset_loader, opt, epoch=5, save_interv
                     ep, batch_idx * len(features), len(trainset_loader.dataset),
                     100. * batch_idx / len(trainset_loader), loss.item()))
             if iteration % save_interval == 0 and iteration > 0:
-                save_checkpoint('./models/{}_backup.pth'.format(opt.model_name), model, optimizer)
+                save_checkpoint('./models/{}/{}_backup.pth'.format(opt.model_name, opt.model_name), model, optimizer)
             iteration += 1
-        # save_checkpoint('./models/{}_epoch_{}.pth'.format(opt.model_name, epoch), model, optimizer)
+        if opt.save_ep:
+            save_checkpoint('./models/{}/{}_epoch_{}.pth'.format(opt.model_name, opt.model_name, epoch), model, optimizer)
         eval(model, testset_loader, criterion, threshold=opt.threshold, epoch=ep)
     
     # save the final model
-    save_checkpoint('./models/{}_final.pth'.format(opt.model_name), model, optimizer)
+    save_checkpoint('./models/{}/{}_final.pth'.format(opt.model_name, opt.model_name), model, optimizer)
 
 def get_device():
     # Use GPU if available, otherwise stick with cpu
@@ -115,6 +118,7 @@ def args_parse(a=0, g=0, t=0):
     parser.add_argument("--train_type", type=str, default='train', choices=['train', 'tune'], help="action to load or generate new features")
     parser.add_argument("--model_dim", type=str, default='1D', choices=['old','1D', '2D'], help="model choice")
     parser.add_argument('--full_train', action="store_true", help='trainset use full size or 0.8')
+    parser.add_argument('--save_ep', action="store_true", help='whether to save model every epoch')
 
     parser.add_argument("--epoch", type=int, default=5, help="number of epoches of training")
     parser.add_argument("--lr", type=float, default=1e-3, help="adam: learning rate")
@@ -166,10 +170,10 @@ if __name__ == '__main__':
                 for alpha in range(3):
                     opt = args_parse(a=alpha, g=gamma, t=threshold)
                     print('\n\n\nStart Tuning Focal_a{}_g{}_t{} :\n'.format(str(alpha), str(gamma), str(threshold)))
-                    train_save(model, trainset_loader, valset_loader, opt, epoch=opt.epoch, save_interval=5000, log_interval=100, device=device)
+                    train_save(model, trainset_loader, valset_loader, opt, epoch=opt.epoch, save_interval=5000, log_interval=100, device=device, save_ep=opt.save_ep)
     elif opt.train_type == 'train':
         print('Start Training ...\n')
-        train_save(model, trainset_loader, valset_loader, opt, epoch=opt.epoch, save_interval=5000, log_interval=100, device=device)
+        train_save(model, trainset_loader, valset_loader, opt, epoch=opt.epoch, save_interval=5000, log_interval=100, device=device, save_ep=opt.save_ep)
     elif opt.train_type == 'sample':
         # get some random training samples
         dataiter = iter(trainset_loader)

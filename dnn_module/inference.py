@@ -3,7 +3,7 @@ import os
 import argparse
 
 # import pickle as pkl
-# import pandas as pd
+import pandas as pd
 import numpy as np
 import torch
 import torch.nn as nn
@@ -23,48 +23,65 @@ def load_checkpoint(checkpoint_path, model):
     model.load_state_dict(state['state_dict'])
     print('model loaded from %s' % checkpoint_path)
 
-def inference(model, testset_loader, threshold):
-    print('Start Inferencing ...')
-    os.makedirs('./submit/', exist_ok=True)
+def inference(model, testset_loader, opt, threshold):
+    if opt.infer_val:
+        os.makedirs('./infer_val/', exist_ok=True)
+    else:
+        os.makedirs('./submit/', exist_ok=True)
     softmax = nn.Softmax()
     model.eval()  # Important: set evaluation mode
 
     ids_all = None
     output_softmax_all = None
-    # pred_max_all = None
     softmax_threshold_all = None
+    labels_all = None
     with torch.no_grad(): # This will free the GPU memory used for back-prop
-        for i, (features, ids) in enumerate(testset_loader):
+        for i, loader_iter in enumerate(testset_loader):
             print('\r[{}/{}]'.format(i, len(testset_loader)), end='')
-            features, _ids = features.to(device), ids.squeeze(1).to(device)
+            if opt.infer_val:
+                features, ids, labels = loader_iter
+            else:
+                features, ids = loader_iter
+            features = features.to(device)
             output = model(features)
-            # pred_max = output.max(1, keepdim=True)[1] # get the index of the max log-probability
-
-            softmax_threshold = softmax(output).cpu() > threshold
             output_softmax = softmax(output).cpu()
+            softmax_threshold = output_softmax > threshold
+            
             if ids_all is not None:
                 ids_all = torch.cat([ids_all, ids], dim=0)
                 output_softmax_all = torch.cat([output_softmax_all, output_softmax], dim=0)
-                softmax_threshold_all = torch.cat([softmax_threshold_all, softmax_threshold], dim=0)
-                # pred_max_all = torch.cat([pred_max_all, pred_max], dim=0)
+                if opt.infer_val:
+                    labels_all = torch.cat([labels_all, labels], dim=0)
+                else:
+                    softmax_threshold_all = torch.cat([softmax_threshold_all, softmax_threshold], dim=0)
             else:
                 ids_all = ids
                 output_softmax_all = output_softmax
-                softmax_threshold_all = softmax_threshold
-                # pred_max_all = pred_max
+                if opt.infer_val:
+                    labels_all = labels
+                else:
+                    softmax_threshold_all = softmax_threshold
 
         ids_all = ids_all.detach().cpu().numpy()
         output_softmax_all = output_softmax_all.detach().cpu().numpy()
-        softmax_threshold_all = softmax_threshold_all.detach().cpu().numpy()
-        softmax_threshold_all = np.expand_dims(softmax_threshold_all[:, 1], axis=1)
-        # pred_max_all = pred_max_all.detach().cpu().numpy()
+        if opt.infer_val:
+            labels_all = labels_all.detach().cpu().numpy()
+            output_softmax_all = np.expand_dims(output_softmax_all[:, 1], axis=1)
+            output_infer_val = np.concatenate((ids_all, output_softmax_all, labels_all), axis=1)
+            df = pd.DataFrame(output_infer_val)
+            df.columns = ['txkey', 'pred_softax', 'label']
+            df.txkey = df.txkey.astype(int)
+            df.label = df.label.astype(int)
+            with open('./infer_val/InferVal_{}.pkl'.format(opt.model_name), 'wb') as file:
+                pkl.dump(output_infer_val, file)
+        else:
+            softmax_threshold_all = softmax_threshold_all.detach().cpu().numpy()
+            softmax_threshold_all = np.expand_dims(softmax_threshold_all[:, 1], axis=1)
         
-        id_output_softmax = np.concatenate((ids_all, output_softmax_all), axis=1)
-        np.savetxt('./submit/id_output_softmax.csv', id_output_softmax, delimiter=',', fmt='%0.4f', header='txkey,output')
-        id_softmax_threshold = np.concatenate((ids_all, softmax_threshold_all), axis=1)
-        np.savetxt('./submit/id_softmax_threshold.csv', id_softmax_threshold, delimiter=',', fmt='%d', header='txkey,fraud_ind')
-        # id_pred_max = np.concatenate((ids_all, pred_max_all), axis=1)
-        # np.savetxt('./submit/id_pred_max.csv', id_pred_max, delimiter=',', fmt='%d', header='txkey,fraud_ind')
+            id_output_softmax = np.concatenate((ids_all, output_softmax_all), axis=1)
+            np.savetxt('./submit/id_output_softmax.csv', id_output_softmax, delimiter=',', fmt='%0.4f', header='txkey,output')
+            id_softmax_threshold = np.concatenate((ids_all, softmax_threshold_all), axis=1)
+            np.savetxt('./submit/id_softmax_threshold.csv', id_softmax_threshold, delimiter=',', fmt='%d', header='txkey,fraud_ind')
 
 def get_device():
     # Use GPU if available, otherwise stick with cpu
@@ -83,6 +100,7 @@ def args_parse(a=0, g=1, t=1):
 
     print('\n\n Focal_a{}_g{}_t{}'.format(str(a), str(g), str(t)))
     
+    parser.add_argument('--infer_val', action="store_true", help='inference not on testset but on valset')
     parser.add_argument("--model_dim", type=str, default='1D', choices=['old','1D', '2D'], help="model choice")
     parser.add_argument('--test_size', type=int, default=1000, help='input test batch size') # 769
     parser.add_argument("--action", type=str, default='load', choices=['load', 'new'], help="action to load or generate new features")
@@ -101,7 +119,7 @@ if __name__ == '__main__':
     model_path = os.path.join('.', 'models', '{}_final.pth'.format(opt.model_name))
 
     # get dataset 
-    testset = Features(data_type='test', dim=opt.model_dim, action=opt.action, feature_fname='FeatureOrigin')
+    testset = Features(data_type='infer', dim=opt.model_dim, action=opt.action, feature_fname='FeatureOrigin', dump_id=opt.infer_val)
     print('rows in testset:', len(testset)) # Should print 1217428
 
     # Use the torch dataloader to iterate through the dataset
@@ -117,4 +135,9 @@ if __name__ == '__main__':
     load_checkpoint(model_path, model)
     print(model)
 
-    inference(model, testset_loader, threshold=opt.threshold)
+    if opt.infer_val:
+        print('\n\nStart inferencing on valset to dump pkl of DataFrame\n\n')
+    else:
+        print('\n\nStart inferencing on testset\n\n')
+    
+    inference(model, testset_loader, opt, threshold=opt.threshold)
