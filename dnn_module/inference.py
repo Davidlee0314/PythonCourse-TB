@@ -93,21 +93,15 @@ def get_device():
 
 def args_parse(a=0, g=1, t=1):
     parser = argparse.ArgumentParser()
-
-    alpha_list = [0.25, 0.5, 0.75]          # 3
-    gamma_list = [0.5, 1, 2, 5]             # 4
-    threshold_list = [0.15, 0.248, 0.4]     # 3
-
-    print('\n\n Focal_a{}_g{}_t{}'.format(str(a), str(g), str(t)))
     
+    parser.add_argument("model_name", type=str, help="model name for saving pth file")
+    parser.add_argument('threshold', type=float, help='alpha param of focal loss')
+
     parser.add_argument('--infer_val', action="store_true", help='inference not on testset but on valset')
+    
     parser.add_argument("--model_dim", type=str, default='1D', choices=['old','1D', '2D'], help="model choice")
     parser.add_argument('--test_size', type=int, default=1000, help='input test batch size') # 769
     parser.add_argument("--action", type=str, default='load', choices=['load', 'new'], help="action to load or generate new features")
-    parser.add_argument("--model_name", type=str, default='Focal_a{}_g{}_t{}'.format(str(a), str(g), str(t)), help="model name for saving pth file")
-    parser.add_argument('--alpha', type=float, default=alpha_list[a], help='alpha param of focal loss')
-    parser.add_argument('--gamma', type=float, default=gamma_list[g], help='gamma param of focal loss')
-    parser.add_argument('--threshold', type=float, default=threshold_list[t], help='alpha param of focal loss')
 
     opt = parser.parse_args()
     print(opt)
