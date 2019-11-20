@@ -86,6 +86,48 @@ class Net1D(nn.Module):
 
         return x
 
+class Net1D_2(nn.Module):
+    def __init__(self):
+        super(Net1D_2, self).__init__()
+        self.fc1 = nn.Sequential(
+            nn.Linear(534, 256),
+            nn.ReLU(),
+            nn.BatchNorm1d(256),
+            nn.Dropout(0.3)
+        )
+        self.fc2 = nn.Sequential(
+            nn.Linear(256, 256),
+            nn.ReLU(),
+            nn.BatchNorm1d(256),
+            nn.Dropout(0.3)
+        )
+        self.fc3 = nn.Sequential(
+            nn.Linear(256, 256),
+            nn.ReLU(),
+            nn.BatchNorm1d(256),
+            nn.Dropout(0.3)
+        )
+        self.fc4 = nn.Linear(256, 2)
+
+    def forward(self, x):
+        # print('input x.shape :', x.shape)
+
+        x = self.fc1(x)
+        # print('fc1 x.shape :', x.shape)
+
+        x = self.fc2(x)
+        # print('fc2 x.shape :', x.shape)
+
+        x = self.fc3(x)
+        # print('fc3 x.shape :', x.shape)
+
+        x = self.fc4(x)
+        # print('fc4 x.shape :', x.shape)
+
+        # soft max   >>  CE loss 自動轉 target 成為 one hot ，因此不需要 softmax 
+
+        return x
+
 class Net2D(nn.Module):
     def __init__(self):
         super(Net2D, self).__init__()
