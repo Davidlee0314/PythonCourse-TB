@@ -76,8 +76,10 @@ def eval(model, testset_loader, criterion, threshold, epoch=0):
 def train_save(model, trainset_loader, testset_loader, opt, epoch=5, save_interval=4000, log_interval=100, device='cpu', save_ep=False):
     os.makedirs('./models/', exist_ok=True)
     os.makedirs('./models/{}/'.format(opt.model_name), exist_ok=True)
-    optimizer = optim.Adam(model.parameters(), lr=opt.lr, betas=(0.9, 0.999))
-    # optimizer = optim.SGD(model.parameters(), lr=opt.lr, momentum=0.9)
+    if opt.optim == 'Adam':
+        optimizer = optim.Adam(model.parameters(), lr=opt.lr, betas=(0.9, 0.999))
+    elif opt.optim == 'SGD':
+        optimizer = optim.SGD(model.parameters(), lr=opt.lr, momentum=0.9)
     criterion = FocalLoss(alpha=opt.alpha, gamma=opt.gamma)
     # criterion = nn.CrossEntropyLoss()
 
@@ -131,6 +133,7 @@ def args_parse(a=0, g=0, t=0):
     threshold_list = [0.15, 0.248, 0.4, 0.1]     # 3
 
     parser.add_argument("--action", type=str, default='load', choices=['load', 'new', 'sample'], help="action to load or generate new features")
+    parser.add_argument("--optim", type=str, default='Adam', choices=['Adam', 'SGD'], help="optimizer choice")
     parser.add_argument("--model_name", type=str, default='Focal_a{}_g{}_t{}'.format(str(a), str(g), str(t)), help="model name for saving pth file")
     parser.add_argument('--alpha', type=float, default=alpha_list[a], help='alpha param of focal loss')
     parser.add_argument('--gamma', type=float, default=gamma_list[g], help='gamma param of focal loss')
