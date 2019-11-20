@@ -42,6 +42,7 @@ class Features(Dataset):
                 key = 'txkey'
             if (self.data_type in ['train', 'val', 'full_train']) or (self.infer_val):
                 key = 'fraud_ind'
+            id = int(row_feature['txkey'])
             label_or_id = int(row_feature[key])
             row_feature = row_feature.drop(labels=[key])
             label_or_id = torch.tensor([label_or_id])
@@ -52,8 +53,8 @@ class Features(Dataset):
                 row_feature = row_feature.view(24, 24)          # (576) >> (24, 24)
                 row_feature = row_feature.unsqueeze(0)          # (24, 24) >> (1, 24, 24)
             if self.infer_val:    # val set, but need id to check
-                id = int(row_feature['txkey'])
                 label = label_or_id
+                id = torch.tensor([id])
                 return row_feature, id, label
             return row_feature, label_or_id
         elif self.model_type == 'rnn':
