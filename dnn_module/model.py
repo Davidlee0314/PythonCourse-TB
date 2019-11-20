@@ -91,18 +91,21 @@ class Net1D_2(nn.Module):
         super(Net1D_2, self).__init__()
         self.fc1 = nn.Sequential(
             nn.Linear(534, 256),
+            
             nn.ReLU(),
             nn.BatchNorm1d(256),
             nn.Dropout(0.3)
         )
         self.fc2 = nn.Sequential(
             nn.Linear(256, 256),
+            
             nn.ReLU(),
             nn.BatchNorm1d(256),
             nn.Dropout(0.3)
         )
         self.fc3 = nn.Sequential(
             nn.Linear(256, 256),
+            
             nn.ReLU(),
             nn.BatchNorm1d(256),
             nn.Dropout(0.3)

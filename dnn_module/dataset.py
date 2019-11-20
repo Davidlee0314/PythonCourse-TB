@@ -17,7 +17,7 @@ class Features(Dataset):
         """ Intialize the dataset """
         self.TRAIN_SHAPE = 1521787
         self.VAL_SHAPE = int(1521787 * 0.8)
-        self.not_train = ['txkey', 'date', 'time']  # fraud_ind
+        self.not_train = ['date', 'time']  # fraud_ind, txkey
         self.not_test = ['date', 'time', 'fraud_ind']
         self.need_encode = ['acquirer', 'bank', 'card', 'coin', 'mcc', 'shop', 'city', 'nation']
         self.category_col_list = ['status', 'trade_cat', 'pay_type', 'trade_type', '3ds', 'fallback', 'hour']
@@ -44,7 +44,7 @@ class Features(Dataset):
                 key = 'fraud_ind'
             id = int(row_feature['txkey'])
             label_or_id = int(row_feature[key])
-            row_feature = row_feature.drop(labels=[key])
+            row_feature = row_feature.drop(labels=[key], axis=1)
             label_or_id = torch.tensor([label_or_id])
             row_feature = torch.tensor(list(row_feature))
             if self.dim == '2D':
@@ -150,10 +150,12 @@ class Features(Dataset):
                 print('testset.shape (after get_dummies / ignore not_train):', testset.shape)
                 return testset
         elif data_type == 'full_train':
+            train_val = train_val.drop(labels=['txkey'], axis=1)
             print('dataset.shape (after get_dummies / ignore not_train):', train_val.shape)
             return train_val
         elif data_type in ['train', 'val']:
             # split train_set / val_set
+            train_val = train_val.drop(labels=['txkey'], axis=1)
             print('dataset.shape (after get_dummies / ignore not_train):', train_val.shape)
             if data_type == 'train':
                 train_set = train_val.iloc[:self.VAL_SHAPE - 1]
@@ -219,12 +221,15 @@ if __name__ == '__main__':
     val_softmax_path = './test.pkl'
 
 
-    with open(val_softmax_path, 'wb') as file:
-        pkl.dump(df, file)
+    # with open(val_softmax_path, 'wb') as file:
+    #     pkl.dump(df, file)
 
 
     print(df.shape)
+    print(df, '\n=====================\n')
+    df = df.drop(labels=['label'], axis=1)
     print(df)
+    print(df['label'])
     # print(out.shape)
     # df = pd.DataFrame(out.numpy())
     # df.columns = ['txkey', 'pred_softax', 'label']
