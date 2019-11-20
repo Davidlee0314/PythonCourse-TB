@@ -77,7 +77,7 @@ class Features(Dataset):
                     with open(test_feature_path, 'rb') as file:
                         testset = pkl.load(file)
                     print('Test Features loaded (from {})'.format(test_feature_path))
-            elif data_type in ['train', 'val', 'full_train'] or self.infer_val:
+            if (data_type in ['train', 'val', 'full_train']) or (self.infer_val):
                 if not os.path.exists(feature_path):
                     raise FileNotFoundError('{} not exists, please select another file.'.format(feature_path))
                 with open(feature_path, 'rb') as file:
@@ -191,7 +191,7 @@ if __name__ == '__main__':
 
 
     ### testing
-    
+
     sm = torch.Tensor(8, 2).uniform_(0, 1)
     print(sm.shape)
     sm = sm[:, 1]
