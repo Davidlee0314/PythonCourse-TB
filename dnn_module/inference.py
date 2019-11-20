@@ -73,9 +73,9 @@ def inference(model, testset_loader, opt, threshold):
 
         ids_all = ids_all.detach().cpu().numpy()
         output_softmax_all = output_softmax_all.detach().cpu().numpy()
+        output_softmax_all = np.expand_dims(output_softmax_all[:, 1], axis=1)
         if opt.infer_val:
             labels_all = labels_all.detach().cpu().numpy()
-            output_softmax_all = np.expand_dims(output_softmax_all[:, 1], axis=1)
             output_infer_val = np.concatenate((ids_all, output_softmax_all, labels_all), axis=1)
             df_output_infer_val = pd.DataFrame(output_infer_val)
             df_output_infer_val.columns = ['txkey', 'pred_softmax', 'label']

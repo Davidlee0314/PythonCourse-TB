@@ -12,7 +12,7 @@ def test_threshold(infer_val_path = './test.pkl'):
     with open(infer_val_path, 'rb') as file:
         infer_val_df = pkl.load(file)
 
-    print(infer_val_df.head())
+    print(infer_val_df.head(), '\n')
 
     threshold_list = [ 0.05 + 0.025 * x for x in range(0, 15)]
     threshold_f1_dict = {}
