@@ -40,7 +40,7 @@ class Features(Dataset):
             row_feature = self.dataset.iloc[index]
             if self.data_type == 'infer':
                 key = 'txkey'
-            elif self.data_type in ['train', 'val', 'full_train']:
+            if (self.data_type in ['train', 'val', 'full_train']) or (self.infer_val):
                 key = 'fraud_ind'
             label_or_id = int(row_feature[key])
             row_feature = row_feature.drop(labels=[key])

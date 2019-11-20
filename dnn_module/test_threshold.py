@@ -29,7 +29,7 @@ def args_parse():
     parser.add_argument("--infer_val_path", "-p", type=str, default='./test.pkl', help="pickle file path to load predicted output")
 
     opt = parser.parse_args()
-    print(opt)
+    print('\n', opt)
     return opt
 
 

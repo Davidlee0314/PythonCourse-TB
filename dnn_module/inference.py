@@ -104,7 +104,7 @@ def args_parse(a=0, g=1, t=1):
     parser.add_argument("--action", type=str, default="load", choices=["load", "new"], help="action to load or generate new features")
 
     opt = parser.parse_args()
-    print(opt)
+    print('\n', opt)
     return opt
 
 if __name__ == '__main__':

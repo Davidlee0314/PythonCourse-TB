@@ -136,7 +136,7 @@ def args_parse(a=0, g=0, t=0):
     parser.add_argument('--threshold', type=float, default=threshold_list[t], help='alpha param of focal loss')
 
     opt = parser.parse_args()
-    print(opt)
+    print('\n', opt)
     return opt
 
 if __name__ == '__main__':
