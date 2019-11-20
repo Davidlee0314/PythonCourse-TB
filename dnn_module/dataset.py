@@ -7,6 +7,7 @@ import pickle as pkl
 import pandas as pd
 import numpy as np
 import torch
+import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 
 from Utils.Feature import FeatureEngineer
@@ -206,45 +207,49 @@ if __name__ == '__main__':
 
     ### testing
 
-    sm = torch.Tensor(8, 2).uniform_(0, 1)
-    print(sm.shape)
-    sm = sm[:, 1]
-    print(sm.shape)
-    sm = np.expand_dims(sm.numpy(), axis=1)
-    print(sm.shape, '\n============================softmax shape over')
+    sm = torch.Tensor(4, 2).uniform_(0, 1)
+    softmax = nn.Softmax(dim=1)
+    after_sm = softmax(sm)
+    print(after_sm)
+
+    # print(sm.shape)
+    # sm = sm[:, 1]
+    # print(sm.shape)
+    # sm = np.expand_dims(sm.numpy(), axis=1)
+    # print(sm.shape, '\n============================softmax shape over')
 
 
-    label = torch.Tensor(8, 1).uniform_(0, 1)
-    id = torch.Tensor(8, 1).uniform_(0, 100)
+    # label = torch.Tensor(8, 1).uniform_(0, 1)
+    # id = torch.Tensor(8, 1).uniform_(0, 100)
 
-    print(id.shape)
-    print(label.shape)
+    # print(id.shape)
+    # print(label.shape)
 
-    # out = torch.stack([id.squeeze(), sm, label.squeeze()], dim=1)ㄥ
-    output_infer_val = np.concatenate((id, sm, label), axis=1)
-    print(output_infer_val.shape)
-    print(output_infer_val)
-    df = pd.DataFrame(output_infer_val)
-    df.columns = ['txkey', 'pred_softax', 'label']
-    df.txkey = df.txkey.astype(int)
-    df.label = df.label.astype(int)
-
-    val_softmax_path = './test.pkl'
-
-
-    # with open(val_softmax_path, 'wb') as file:
-    #     pkl.dump(df, file)
-
-
-    print(df.shape)
-    print(df, '\n=====================\n')
-    df = df.drop(labels=['label'], axis=1)
-    print(df)
-    print(df['label'])
-    # print(out.shape)
-    # df = pd.DataFrame(out.numpy())
+    # # out = torch.stack([id.squeeze(), sm, label.squeeze()], dim=1)ㄥ
+    # output_infer_val = np.concatenate((id, sm, label), axis=1)
+    # print(output_infer_val.shape)
+    # print(output_infer_val)
+    # df = pd.DataFrame(output_infer_val)
     # df.columns = ['txkey', 'pred_softax', 'label']
+    # df.txkey = df.txkey.astype(int)
+    # df.label = df.label.astype(int)
+
+    # val_softmax_path = './test.pkl'
+
+
+    # # with open(val_softmax_path, 'wb') as file:
+    # #     pkl.dump(df, file)
+
+
     # print(df.shape)
+    # print(df, '\n=====================\n')
+    # df = df.drop(labels=['label'], axis=1)
     # print(df)
+    # print(df['label'])
+    # # print(out.shape)
+    # # df = pd.DataFrame(out.numpy())
+    # # df.columns = ['txkey', 'pred_softax', 'label']
+    # # print(df.shape)
+    # # print(df)
 
 

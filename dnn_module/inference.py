@@ -28,7 +28,7 @@ def inference(model, testset_loader, opt, threshold):
         os.makedirs('./infer_val/', exist_ok=True)
     else:
         os.makedirs('./submit/', exist_ok=True)
-    softmax = nn.Softmax()
+    softmax = nn.Softmax(dim=1)
     model.eval()  # Important: set evaluation mode
 
     ids_all = None

@@ -36,7 +36,7 @@ def load_checkpoint(checkpoint_path, model, optimizer):
 def eval(model, testset_loader, criterion, threshold, epoch=0):
     print('Start Evaluating ...')
     model.eval()  # Important: set evaluation mode
-    softmax = nn.Softmax()
+    softmax = nn.Softmax(dim=1)
 
     test_loss = 0
     correct = 0
