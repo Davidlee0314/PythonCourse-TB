@@ -65,10 +65,10 @@ def show_data(cm, print_res = 0):
         print('\tAccuracy             = {:.3f} ({} "Pred correct"/ {} "Total")'.format( (tp+tn)/total, tp+tn, total ))
     return tp/(tp+fp), tp/(tp+fn), fp/(fp+tn)
 
-def cm_f1_score(labels, preds, file_name='file_name'):
+def cm_f1_score(labels, preds, file_name='file_name', verbose=True):
     cm = confusion_matrix(labels, preds)  # labels df
-    plot_confusion_matrix(cm, ['0', '1'], file_name=file_name)
-    pr, tpr, fpr = show_data(cm, print_res = 1)
+    # plot_confusion_matrix(cm, ['0', '1'], file_name=file_name)
+    pr, tpr, fpr = show_data(cm, print_res=verbose)
     f1 = 2 * (pr * tpr) / (pr + tpr)
     return f1
 

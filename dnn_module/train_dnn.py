@@ -121,7 +121,7 @@ def args_parse(a=0, g=0, t=0):
     parser.add_argument('--save_ep', action="store_true", help='whether to save model every epoch')
 
     parser.add_argument("--epoch", type=int, default=5, help="number of epoches of training")
-    parser.add_argument("--lr", type=float, default=1e-3, help="adam: learning rate")
+    parser.add_argument("--lr", type=float, default=0.001, help="optimizer : learning rate")
     parser.add_argument('--batch_size', type=int, default=512, help='input batch size')
     parser.add_argument('--valid_size', type=int, default=1000, help='input valid size') # 769
 
