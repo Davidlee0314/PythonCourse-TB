@@ -95,13 +95,13 @@ def args_parse(a=0, g=1, t=1):
     parser = argparse.ArgumentParser()
     
     parser.add_argument("model_name", type=str, help="model name for saving pth file")
-    parser.add_argument('threshold', type=float, help='alpha param of focal loss')
+    parser.add_argument("threshold", type=float, help="alpha param of focal loss")
 
-    parser.add_argument('--infer_val', action="store_true", help='inference not on testset but on valset')
-    
-    parser.add_argument("--model_dim", type=str, default='1D', choices=['old','1D', '2D'], help="model choice")
-    parser.add_argument('--test_size', type=int, default=1000, help='input test batch size') # 769
-    parser.add_argument("--action", type=str, default='load', choices=['load', 'new'], help="action to load or generate new features")
+    parser.add_argument("--infer_val", action="store_true", help="inference not on testset but on valset")
+
+    parser.add_argument("--model_dim", type=str, default="1D", choices=["old","1D", "2D"], help="model choice")
+    parser.add_argument("--test_size", type=int, default=1000, help="input test batch size") # 769
+    parser.add_argument("--action", type=str, default="load", choices=["load", "new"], help="action to load or generate new features")
 
     opt = parser.parse_args()
     print(opt)
@@ -113,7 +113,7 @@ if __name__ == '__main__':
     model_path = os.path.join('.', 'models', '{}_final.pth'.format(opt.model_name))
 
     # get dataset 
-    testset = Features(data_type='infer', dim=opt.model_dim, action=opt.action, feature_fname='FeatureOrigin', dump_id=opt.infer_val)
+    testset = Features(data_type='infer', dim=opt.model_dim, action=opt.action, feature_fname='FeatureOrigin', infer_val=opt.infer_val)
     print('rows in testset:', len(testset)) # Should print 1217428
 
     # Use the torch dataloader to iterate through the dataset
