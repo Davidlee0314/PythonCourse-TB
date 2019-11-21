@@ -81,7 +81,8 @@ def inference(model, testset_loader, opt, threshold):
             df_output_infer_val.columns = ['txkey', 'pred_softmax', 'label']
             df_output_infer_val.txkey = df_output_infer_val.txkey.astype(int)
             df_output_infer_val.label = df_output_infer_val.label.astype(int)
-            with open('./infer_val/InferVal_{}.pkl'.format(opt.model_name), 'wb') as file:
+            model_name = opt.model_path.split('/')[-1].split('.')[0]
+            with open('./infer_val/InferVal_{}.pkl'.format(model_name), 'wb') as file:
                 pkl.dump(df_output_infer_val, file)
         else:
             softmax_threshold_all = softmax_threshold_all.detach().cpu().numpy()
@@ -103,7 +104,7 @@ def get_device():
 def args_parse(a=0, g=1, t=1):
     parser = argparse.ArgumentParser()
     
-    parser.add_argument("model_name", type=str, help="model name for saving pth file")
+    parser.add_argument("model_path", type=str, help="model path for saving pth file")
     parser.add_argument("threshold", type=float, help="alpha param of focal loss")
 
     parser.add_argument("--infer_val", action="store_true", help="inference not on testset but on valset")
@@ -119,7 +120,6 @@ def args_parse(a=0, g=1, t=1):
 if __name__ == '__main__':
     # parse training args
     opt = args_parse(a=0, g=0, t=0)
-    model_path = os.path.join('.', 'models', '{}_final.pth'.format(opt.model_name))
 
     # get dataset 
     data_type = 'infer_val' if opt.infer_val else 'infer'
@@ -136,7 +136,7 @@ if __name__ == '__main__':
         model = Net2D_2().to(device)
     elif opt.model_dim == 'old':
         model = Net().to(device)
-    load_checkpoint(model_path, model)
+    load_checkpoint(opt.model_path, model)
     print(model)
 
     if opt.infer_val:
