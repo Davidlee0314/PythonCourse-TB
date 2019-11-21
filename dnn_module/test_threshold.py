@@ -25,7 +25,7 @@ def test_threshold(infer_val_path = './test.pkl'):
     for ind, val in threshold_f1_dict.items():
         print('{} : f1 = {}'.format(ind, val))
     max_f1 = max(threshold_f1_dict.values())
-    max_key = list(threshold_f1_dict.keys())[list(threshold_f1_dict.values()).index(m)]
+    max_key = list(threshold_f1_dict.keys())[list(threshold_f1_dict.values()).index(max_f1)]
     print('\nMax f1 score = {}   (when {})\n'.format(max_f1, max_key))
 
 def args_parse():

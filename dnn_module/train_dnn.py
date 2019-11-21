@@ -33,7 +33,7 @@ def load_checkpoint(checkpoint_path, model, optimizer):
     optimizer.load_state_dict(state['optimizer'])
     print('model loaded from %s' % checkpoint_path)
 
-def eval(model, testset_loader, criterion, threshold, epoch=0):
+def eval(model, testset_loader, criterion, threshold, threshold_2=None, epoch=0):
     print('Start Evaluating ...')
     model.eval()  # Important: set evaluation mode
     softmax = nn.Softmax(dim=1)
@@ -67,7 +67,13 @@ def eval(model, testset_loader, criterion, threshold, epoch=0):
     # 考慮類別的不平衡性，需要計算類別的加權平均 , average='weighted', 'macro'
     # f1 = f1_score(labels_all.cpu(), softmax_mask, average='weighted')
     f1_cm = cm_f1_score(labels_all.cpu().numpy(), softmax_mask.numpy(), file_name='f1_cm_ep{}'.format(epoch))
-    print('\tF1 score (cm) = {}'.format(f1_cm))
+    print('\tF1 score (cm) = {} (threshold = {})'.format(f1_cm, threshold))
+
+    if threshold_2 is not None:
+        softmax_mask_2 = softmax(output_all).cpu() > threshold_2
+        softmax_mask_2 = softmax_mask_2[:, 1]
+        f1_cm_2 = cm_f1_score(labels_all.cpu().numpy(), softmax_mask_2.numpy(), file_name='f1_cm_2_ep{}'.format(epoch))
+        print('\tF1 score_2 (cm) = {} (threshold = {})'.format(f1_cm_2, threshold_2))
 
     # test_loss /= len(testset_loader.dataset)
     # print('\n\tAverage loss: {:.4f} \n\tAccuracy: {:.0f}% ({}/{}) \n\tF1 Score: {}\n\tF1(cm) Score: {}\n'.format(
@@ -103,7 +109,7 @@ def train_save(model, trainset_loader, testset_loader, opt, epoch=5, save_interv
             iteration += 1
         if opt.save_ep:
             save_checkpoint('./models/{}/{}_epoch_{}.pth'.format(opt.model_name, opt.model_name, epoch), model, optimizer)
-        eval(model, testset_loader, criterion, threshold=opt.threshold, epoch=ep)
+        eval(model, testset_loader, criterion, threshold=opt.threshold, threshold_2=opt.threshold_2, epoch=ep)
     
     # save the final model
     save_checkpoint('./models/{}/{}_final.pth'.format(opt.model_name, opt.model_name), model, optimizer)
@@ -137,7 +143,8 @@ def args_parse(a=0, g=0, t=0):
     parser.add_argument("--model_name", type=str, default='Focal_a{}_g{}_t{}'.format(str(a), str(g), str(t)), help="model name for saving pth file")
     parser.add_argument('--alpha', type=float, default=alpha_list[a], help='alpha param of focal loss')
     parser.add_argument('--gamma', type=float, default=gamma_list[g], help='gamma param of focal loss')
-    parser.add_argument('--threshold', type=float, default=threshold_list[t], help='alpha param of focal loss')
+    parser.add_argument('--threshold', '-t', type=float, default=threshold_list[t], help='threshold for evaluating')
+    parser.add_argument('--threshold_2', '-t2', type=float, default=None, help='another threshold for evaluating')
 
     opt = parser.parse_args()
     print('\n', opt)
