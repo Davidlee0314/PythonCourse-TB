@@ -89,9 +89,17 @@ def inference(model, testset_loader, opt, threshold):
             softmax_threshold_all = np.expand_dims(softmax_threshold_all[:, 1], axis=1)
         
             id_output_softmax = np.concatenate((ids_all, output_softmax_all), axis=1)
-            np.savetxt('./submit/id_output_softmax.csv', id_output_softmax, delimiter=',', fmt='%0.4f', header='txkey,output')
+            df_id_output_softmax = pd.DataFrame(id_output_softmax)
+            df_id_output_softmax.columns = ['txkey', 'pred_softmax']
+            df_id_output_softmax.txkey = df_id_output_softmax.txkey.astype(int)
+            df_id_output_softmax.pred_softmax = df_id_output_softmax.pred_softmax.astype(float)
+            # np.savetxt('./submit/id_output_softmax.csv', id_output_softmax, delimiter=',', fmt='%0.4f', header='txkey,output')
             id_softmax_threshold = np.concatenate((ids_all, softmax_threshold_all), axis=1)
-            np.savetxt('./submit/id_softmax_threshold.csv', id_softmax_threshold, delimiter=',', fmt='%d', header='txkey,fraud_ind')
+            df_id_softmax_threshold = pd.DataFrame(id_softmax_threshold)
+            df_id_softmax_threshold.columns = ['txkey', 'pred']
+            df_id_softmax_threshold.txkey = df_id_softmax_threshold.txkey.astype(int)
+            df_id_softmax_threshold.pred = df_id_softmax_threshold.pred.astype(float)
+            # np.savetxt('./submit/id_softmax_threshold.csv', id_softmax_threshold, delimiter=',', fmt='%d', header='txkey,fraud_ind')
 
 def get_device():
     # Use GPU if available, otherwise stick with cpu
