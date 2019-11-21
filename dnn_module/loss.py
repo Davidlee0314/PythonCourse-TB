@@ -101,7 +101,7 @@ class CenterLoss(nn.Module):
 
         dist = []
         for i in range(batch_size):
-            print(mask[i])
+            # print(mask[i])
             value = distmat[i][mask[i]]
             value = value.clamp(min=1e-12, max=1e+12)  # for numerical stability
             dist.append(value)
