@@ -51,10 +51,9 @@ def show_data(cm, print_res=0, log_path=False):
     tn = cm[0,0]
     total = tp + fn + fp + tn    
     pr, tpr, fpr = tp/(tp+fp), tp/(tp+fn), fp/(fp+tn)
-    f1_cm = 2 * (pr * tpr) / (pr + tpr)
+    f1 = 2 * (pr * tpr) / (pr + tpr)
 
     log_list = [
-        '\n\nEval set:\n',
         '\tPrecision     = {:.3f} ({} "Pred 1  " / {} "Actual 1")\n'.format(tp/(tp+fp), tp, tp+fp),
         '\tRecall (TPR)  = {:.3f} ({} "Actual 1" / {} "Pred   1")\n'.format(tp/(tp+fn), tp, tp+fn),
         '\tFallout (FPR) = {:.3f} ({} / {})\n\n'.format(fp/(fp+tn), fp, fp+tn),
