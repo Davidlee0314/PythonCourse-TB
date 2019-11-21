@@ -93,12 +93,14 @@ def inference(model, testset_loader, opt, threshold):
             df_id_output_softmax.columns = ['txkey', 'pred_softmax']
             df_id_output_softmax.txkey = df_id_output_softmax.txkey.astype(int)
             df_id_output_softmax.pred_softmax = df_id_output_softmax.pred_softmax.astype(float)
+            df_id_output_softmax.to_csv('./submit/id_output_softmax.csv', index=False)
             # np.savetxt('./submit/id_output_softmax.csv', id_output_softmax, delimiter=',', fmt='%0.4f', header='txkey,output')
             id_softmax_threshold = np.concatenate((ids_all, softmax_threshold_all), axis=1)
             df_id_softmax_threshold = pd.DataFrame(id_softmax_threshold)
             df_id_softmax_threshold.columns = ['txkey', 'pred']
             df_id_softmax_threshold.txkey = df_id_softmax_threshold.txkey.astype(int)
             df_id_softmax_threshold.pred = df_id_softmax_threshold.pred.astype(float)
+            df_id_output_softmax.to_csv('./submit/id_softmax_threshold.csv', index=False)
             # np.savetxt('./submit/id_softmax_threshold.csv', id_softmax_threshold, delimiter=',', fmt='%d', header='txkey,fraud_ind')
 
 def get_device():
