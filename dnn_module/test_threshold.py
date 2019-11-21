@@ -38,8 +38,8 @@ def args_parse():
 
 
 if __name__ == "__main__":
-    # opt = args_parse()
-    # test_threshold(opt.infer_val_path)
+    opt = args_parse()
+    test_threshold(opt.infer_val_path)
 
-    m = max(a.values())
-    k = list(a.keys())[list(a.values()).index(m)]
+    # m = max(a.values())
+    # k = list(a.keys())[list(a.values()).index(m)]
