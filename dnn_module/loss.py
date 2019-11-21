@@ -97,7 +97,7 @@ class CenterLoss(nn.Module):
         if self.use_gpu: classes = classes.cuda()
         labels = labels.unsqueeze(1).expand(batch_size, self.num_classes)
         mask = labels.eq(classes.expand(batch_size, self.num_classes))
-        print(mask)
+        # print(mask)
 
         dist = []
         for i in range(batch_size):
