@@ -15,7 +15,7 @@ from sklearn.metrics import f1_score
 
 from dataset import Features
 from model import Net, Net1D, Net1D_2, Net2D, Net2D_2
-from loss import FocalLoss
+from loss import FocalLoss, TripletLoss, CenterLoss
 from confusion import cm_f1_score
 
 def write_log(log, log_path):
@@ -45,7 +45,7 @@ def eval(model, testset_loader, opt, criterion, threshold, threshold_2=None, epo
     # softmax = nn.LogSoftmax(dim=1)
 
     test_loss = 0
-    correct = 0
+    # correct = 0
     labels_all = None
     output_all = None
     with torch.no_grad(): # This will free the GPU memory used for back-prop
@@ -54,8 +54,8 @@ def eval(model, testset_loader, opt, criterion, threshold, threshold_2=None, epo
             features, _labels = features.to(device), labels.squeeze(1).to(device)
             output = model(features)
             test_loss += criterion(output, _labels).item() # sum up batch loss
-            pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
-            correct += pred.eq(_labels.view_as(pred)).sum().item()
+            # pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
+            # correct += pred.eq(_labels.view_as(pred)).sum().item()
             if labels_all is not None:
                 labels_all = torch.cat([labels_all, labels], dim=0)
                 output_all = torch.cat([output_all, output], dim=0)
@@ -72,7 +72,7 @@ def eval(model, testset_loader, opt, criterion, threshold, threshold_2=None, epo
     # 考慮類別的不平衡性，需要計算類別的加權平均 , average='weighted', 'macro'
     # f1 = f1_score(labels_all.cpu(), softmax_mask, average='weighted')
     f1_cm = cm_f1_score(labels_all.cpu().numpy(), softmax_mask.numpy(), file_name='f1_cm_ep{}'.format(epoch), log_path=log_path)
-    write_log('\tF1 score (cm) = {} (threshold = {})'.format(f1_cm, threshold), log_path)
+    write_log('\tF1 score (cm) = {} (threshold = {})\n================\n'.format(f1_cm, threshold), log_path)
 
     if threshold_2 is not None:
         softmax_mask_2 = softmax(output_all).cpu() > threshold_2
@@ -84,14 +84,20 @@ def eval(model, testset_loader, opt, criterion, threshold, threshold_2=None, epo
     # print('\n\tAverage loss: {:.4f} \n\tAccuracy: {:.0f}% ({}/{}) \n\tF1 Score: {}\n\tF1(cm) Score: {}\n'.format(
     #     test_loss, 100. * correct / len(testset_loader.dataset), correct, len(testset_loader.dataset), f1, f1_cm))
 
-def train_save(model, trainset_loader, testset_loader, opt, epoch=5, save_interval=4000, log_interval=100, device='cpu', save_ep=False):
+def train_save(model, trainset_loader, testset_loader, opt, epoch=5, loss_cri='Focal', save_interval=4000, log_interval=100, device='cpu', save_ep=False):
     os.makedirs('./models/', exist_ok=True)
     os.makedirs('./models/{}/'.format(opt.model_name), exist_ok=True)
     if opt.optim == 'Adam':
         optimizer = optim.Adam(model.parameters(), lr=opt.lr, betas=(0.9, 0.999))
     elif opt.optim == 'SGD':
         optimizer = optim.SGD(model.parameters(), lr=opt.lr, momentum=0.9)
-    criterion = FocalLoss(alpha=opt.alpha, gamma=opt.gamma)
+    
+    if loss_cri == 'Focal':
+        criterion = FocalLoss(alpha=opt.alpha, gamma=opt.gamma)
+    elif loss_cri == 'Triplet':
+        criterion = TripletLoss(margin=opt.margin)
+    elif loss_cri == 'Center':
+        criterion = CenterLoss()
     # criterion = nn.CrossEntropyLoss()
 
     iteration = 0
@@ -133,6 +139,8 @@ def args_parse(a=0, g=0, t=0):
     parser.add_argument("--model_dim", type=str, default='1D', choices=['old','1D', '2D'], help="model choice")
     parser.add_argument('--full_train', action="store_true", help='trainset use full size or 0.8')
     parser.add_argument('--save_ep', action="store_true", help='whether to save model every epoch')
+    parser.add_argument("--loss_cri", "-l", type=str, default='Focal', choices=['Focal','Triplet', 'Center'], help="loss type choice")
+    parser.add_argument("--margin", type=float, default=0.3, help="margin for Triplet loss")
 
     parser.add_argument("--epoch", type=int, default=5, help="number of epoches of training")
     parser.add_argument("--lr", type=float, default=0.001, help="optimizer : learning rate")
@@ -186,10 +194,10 @@ if __name__ == '__main__':
                 for alpha in range(3):
                     opt = args_parse(a=alpha, g=gamma, t=threshold)
                     print('\n\n\nStart Tuning Focal_a{}_g{}_t{} :\n'.format(str(alpha), str(gamma), str(threshold)))
-                    train_save(model, trainset_loader, valset_loader, opt, epoch=opt.epoch, save_interval=5000, log_interval=100, device=device, save_ep=opt.save_ep)
+                    train_save(model, trainset_loader, valset_loader, opt, loss_cri=opt.loss_cri, epoch=opt.epoch, save_interval=5000, log_interval=100, device=device, save_ep=opt.save_ep)
     elif opt.train_type == 'train':
         print('Start Training ...\n')
-        train_save(model, trainset_loader, valset_loader, opt, epoch=opt.epoch, save_interval=5000, log_interval=100, device=device, save_ep=opt.save_ep)
+        train_save(model, trainset_loader, valset_loader, opt, loss_cri=opt.loss_cri, epoch=opt.epoch, save_interval=5000, log_interval=100, device=device, save_ep=opt.save_ep)
     elif opt.train_type == 'sample':
         # get some random training samples
         dataiter = iter(trainset_loader)
