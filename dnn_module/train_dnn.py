@@ -18,6 +18,10 @@ from model import Net, Net1D, Net1D_2, Net2D, Net2D_2
 from loss import FocalLoss
 from confusion import cm_f1_score
 
+def write_log(log, log_path):
+    print(log)
+    with open(log_path, 'a') as file:
+        file.write('\n' + log + '\n')
 
 def save_checkpoint(checkpoint_path, model, optimizer):
     save_dir, _ = os.path.split(checkpoint_path)
@@ -33,8 +37,9 @@ def load_checkpoint(checkpoint_path, model, optimizer):
     optimizer.load_state_dict(state['optimizer'])
     print('model loaded from %s' % checkpoint_path)
 
-def eval(model, testset_loader, criterion, threshold, threshold_2=None, epoch=0):
+def eval(model, testset_loader, opt, criterion, threshold, threshold_2=None, epoch=0):
     print('Start Evaluating ...')
+    log_path = './models/{}/val_log.txt'.format(opt.model_name)
     model.eval()  # Important: set evaluation mode
     softmax = nn.Softmax(dim=1)
     # softmax = nn.LogSoftmax(dim=1)
@@ -63,17 +68,17 @@ def eval(model, testset_loader, criterion, threshold, threshold_2=None, epoch=0)
     softmax_mask = softmax(output_all).cpu() > threshold    # shape[batch, 2]  : 2 value > threshold or not
     softmax_mask = softmax_mask[:, 1]
 
-    print('\n\nEval set:')
+    write_log('\n\nEval set:', log_path)
     # 考慮類別的不平衡性，需要計算類別的加權平均 , average='weighted', 'macro'
     # f1 = f1_score(labels_all.cpu(), softmax_mask, average='weighted')
-    f1_cm = cm_f1_score(labels_all.cpu().numpy(), softmax_mask.numpy(), file_name='f1_cm_ep{}'.format(epoch))
-    print('\tF1 score (cm) = {} (threshold = {})'.format(f1_cm, threshold))
+    f1_cm = cm_f1_score(labels_all.cpu().numpy(), softmax_mask.numpy(), file_name='f1_cm_ep{}'.format(epoch), log_path=log_path)
+    write_log('\tF1 score (cm) = {} (threshold = {})'.format(f1_cm, threshold), log_path)
 
     if threshold_2 is not None:
         softmax_mask_2 = softmax(output_all).cpu() > threshold_2
         softmax_mask_2 = softmax_mask_2[:, 1]
-        f1_cm_2 = cm_f1_score(labels_all.cpu().numpy(), softmax_mask_2.numpy(), file_name='f1_cm_2_ep{}'.format(epoch))
-        print('\tF1 score_2 (cm) = {} (threshold = {})'.format(f1_cm_2, threshold_2))
+        f1_cm_2 = cm_f1_score(labels_all.cpu().numpy(), softmax_mask_2.numpy(), file_name='f1_cm_2_ep{}'.format(epoch), log_path=log_path)
+        write_log('\tF1 score_2 (cm) = {} (threshold = {})'.format(f1_cm_2, threshold_2) , log_path)
 
     # test_loss /= len(testset_loader.dataset)
     # print('\n\tAverage loss: {:.4f} \n\tAccuracy: {:.0f}% ({}/{}) \n\tF1 Score: {}\n\tF1(cm) Score: {}\n'.format(
@@ -109,7 +114,7 @@ def train_save(model, trainset_loader, testset_loader, opt, epoch=5, save_interv
             iteration += 1
         if opt.save_ep:
             save_checkpoint('./models/{}/{}_epoch_{}.pth'.format(opt.model_name, opt.model_name, epoch), model, optimizer)
-        eval(model, testset_loader, criterion, threshold=opt.threshold, threshold_2=opt.threshold_2, epoch=ep)
+        eval(model, testset_loader, opt, criterion, threshold=opt.threshold, threshold_2=opt.threshold_2, epoch=ep)
     
     # save the final model
     save_checkpoint('./models/{}/{}_final.pth'.format(opt.model_name, opt.model_name), model, optimizer)

@@ -44,32 +44,44 @@ def plot_confusion_matrix(cm, classes,
     plt.clf()
     plt.close()
 
-def show_data(cm, print_res = 0):
+def show_data(cm, print_res=0, log_path=False):
     tp = cm[1,1]
     fn = cm[1,0]
     fp = cm[0,1]
     tn = cm[0,0]
-    total = tp + fn + fp + tn
-    if print_res == 1:
-        print('\tPrecision     = {:.3f} ({} "Pred 1  " / {} "Actual 1")'.format(tp/(tp+fp), tp, tp+fp))
-        print('\tRecall (TPR)  = {:.3f} ({} "Actual 1" / {} "Pred   1")'.format(tp/(tp+fn), tp, tp+fn))
-        print('\tFallout (FPR) = {:.3f} ({} / {})'.format(fp/(fp+tn), fp, fp+tn))
-        print('')
-        print('\tTrue Positive  = {}'.format(tp))
-        print('\tTrue Negative  = {}'.format(tn))
-        print('\tFalse Positive = {}'.format(fp))
-        print('\tFalse Negative = {}'.format(fn))
-        print('')
-        print('\tPredict Negative (0) = {:.3f} ({} / {})'.format( (tn+fn)/total, tn+fn, total ))
-        print('\tPredict Positive (1) = {:.3f} ({} / {})'.format( (tp+fp)/total, tp+fp, total ))
-        print('\tAccuracy             = {:.3f} ({} "Pred correct"/ {} "Total")'.format( (tp+tn)/total, tp+tn, total ))
-    return tp/(tp+fp), tp/(tp+fn), fp/(fp+tn)
+    total = tp + fn + fp + tn    
+    pr, tpr, fpr = tp/(tp+fp), tp/(tp+fn), fp/(fp+tn)
+    f1_cm = 2 * (pr * tpr) / (pr + tpr)
 
-def cm_f1_score(labels, preds, file_name='file_name', verbose=True):
+    log_list = [
+        '\n\nEval set:\n',
+        '\tPrecision     = {:.3f} ({} "Pred 1  " / {} "Actual 1")\n'.format(tp/(tp+fp), tp, tp+fp),
+        '\tRecall (TPR)  = {:.3f} ({} "Actual 1" / {} "Pred   1")\n'.format(tp/(tp+fn), tp, tp+fn),
+        '\tFallout (FPR) = {:.3f} ({} / {})\n\n'.format(fp/(fp+tn), fp, fp+tn),
+    
+        '\tTrue Positive  = {}\n'.format(tp),
+        '\tTrue Negative  = {}\n'.format(tn),
+        '\tFalse Positive = {}\n'.format(fp),
+        '\tFalse Negative = {}\n\n'.format(fn),
+    
+        '\tPredict Negative (0) = {:.3f} ({} / {})\n'.format( (tn+fn)/total, tn+fn, total ),
+        '\tPredict Positive (1) = {:.3f} ({} / {})\n'.format( (tp+fp)/total, tp+fp, total ),
+        '\tAccuracy             = {:.3f} ({} "Pred correct"/ {} "Total")\n'.format( (tp+tn)/total, tp+tn, total )
+    ]
+    log = ''.join(log_list)
+
+    if print_res == 1:
+        print(log)
+    if log_path is not None:
+        with open(log_path, 'a') as file:
+            file.write(log)
+
+    return f1
+
+def cm_f1_score(labels, preds, file_name='file_name', verbose=True, log_path=None):
     cm = confusion_matrix(labels, preds)  # labels df
     # plot_confusion_matrix(cm, ['0', '1'], file_name=file_name)
-    pr, tpr, fpr = show_data(cm, print_res=verbose)
-    f1 = 2 * (pr * tpr) / (pr + tpr)
+    f1 = show_data(cm, print_res=verbose, log_path=log_path)
     return f1
 
 if __name__ == '__main__':
