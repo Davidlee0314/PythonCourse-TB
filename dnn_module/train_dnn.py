@@ -119,7 +119,7 @@ def train_save(model, trainset_loader, testset_loader, opt, epoch=5, loss_cri='F
                 save_checkpoint('./models/{}/{}_backup.pth'.format(opt.model_name, opt.model_name), model, optimizer)
             iteration += 1
         if opt.save_ep:
-            save_checkpoint('./models/{}/{}_epoch_{}.pth'.format(opt.model_name, opt.model_name, epoch), model, optimizer)
+            save_checkpoint('./models/{}/{}_epoch_{}.pth'.format(opt.model_name, opt.model_name, ep), model, optimizer)
         eval(model, testset_loader, opt, criterion, threshold=opt.threshold, threshold_2=opt.threshold_2, epoch=ep)
     
     # save the final model
