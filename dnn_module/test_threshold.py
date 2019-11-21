@@ -4,6 +4,7 @@ Usage Example :
 '''
 import argparse
 
+import pandas as pd
 import pickle as pkl
 
 from confusion import cm_f1_score
