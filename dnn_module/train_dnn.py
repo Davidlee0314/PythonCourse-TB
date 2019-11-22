@@ -44,7 +44,7 @@ def eval(model, testset_loader, opt, criterion, threshold, threshold_2=None, epo
     softmax = nn.Softmax(dim=1)
     # softmax = nn.LogSoftmax(dim=1)
 
-    test_loss = 0
+    # test_loss = 0
     # correct = 0
     labels_all = None
     output_all = None
@@ -53,7 +53,7 @@ def eval(model, testset_loader, opt, criterion, threshold, threshold_2=None, epo
             print('\r[{}/{}]'.format(i, len(testset_loader)), end='')
             features, _labels = features.to(device), labels.squeeze(1).to(device)
             output = model(features)
-            test_loss += criterion(output, _labels).item() # sum up batch loss
+            # test_loss += criterion(output, _labels).item() # sum up batch loss
             # pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
             # correct += pred.eq(_labels.view_as(pred)).sum().item()
             if labels_all is not None:
